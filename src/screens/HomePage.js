@@ -1,21 +1,38 @@
-  import { StyleSheet, Text, View, SafeAreaView, TextInput, Pressable, FlatList, Platform, Alert, KeyboardAvoidingView } from 'react-native';
+  import {
+    StyleSheet,
+    Text,
+    View,
+    SafeAreaView,
+    TextInput,
+    Pressable,
+    FlatList,
+    Platform,
+    Alert,
+    KeyboardAvoidingView,
+    StatusBar, 
+  } from 'react-native';
   import { useDispatch, useSelector } from 'react-redux';
   import React, { useState, useEffect } from 'react';
   import Fontisto from '@expo/vector-icons/Fontisto';
   import AntDesign from '@expo/vector-icons/AntDesign';
-  import CustomTextInput from '../components/CustomTextInput.js';
+  import NotificationBox from '../components/NotificationBox.js';
   import CustomButton from '../components/CustomButton.js';
   import { LogOut } from '../redux/userSlice.js';
   import { addTitle, deleteData, getAllData, toggleListTic } from '../redux/DataSlice.js';
+  import { setShowNotificationBox, setInviteFriendBox } from '../redux/TriggerSlice.js';
   import Animated from 'react-native-reanimated';
   import { BounceIn, } from 'react-native-reanimated';
+  import InviteFriendBox from '../components/InviteFriendBox.js';
 
-  const HomePage = () => {
+  const HomePage = ({navigation}) => {
     const dispatch = useDispatch();
 
     const [listTitle, setListTitle] = useState('');
     const [isEffect, setIsEffect] = useState(false); // State used to trigger data refresh
-    const [showBox, setShowBox] = useState(false);
+
+    const showNotificationBox = useSelector(state => state.trigger.showNotificationBox)
+    const showInviteFriendBox = useSelector(state => state.trigger.showInviteFriendBox)
+
     const { data, isLoading, error } = useSelector(state => state.userData); // Also get the error state
 
     useEffect(() => {
@@ -64,8 +81,7 @@
           </Pressable>
           <Pressable
             onPress={() => {
-              // List item click, navigate to detail page or show items
-              // navigation.navigate('ListDetail', { listId: item.id, listTitle: item.title });
+              navigation.navigate('ListDetail', { listId: item.id, listTitle: item.title });
               console.log("List item clicked:", item.id, item.title);
             }}
             style={styles.listItemTextContainer}
@@ -73,7 +89,7 @@
             <Text style={item.tic ? styles.listItemTextStrikethrough : styles.listItemText}>{item.title}</Text>
           </Pressable>
           
-          <Pressable style={styles.inviteUser}>
+          <Pressable style={styles.inviteUser} onPress={() => dispatch(setInviteFriendBox(true))}>
             <AntDesign name="adduser" size={24} color="black" />
           </Pressable>
           {/* Delete button */}
@@ -93,22 +109,26 @@
 
     return (
       <KeyboardAvoidingView
-        style={styles.keyboardAvoidingContainer} // Sadece bu view'e özel stil
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidingContainer} 
       >
+        <StatusBar 
+          backgroundColor="#2c3e50" // status bar background color for Android
+          barStyle="light-content"  // Set the icon color to light for iOS and Android 
+        />
         <SafeAreaView style={styles.container}>
           {/* Header Section */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>My Shopping Lists</Text>
             <View style={styles.headerIcons}>
               <Pressable onPress={() => {
-                  console.log("set oncesi: ", showBox);
-                  setShowBox(prev => !prev);
-                  console.log("set sonrasi: ", showBox);
+                  dispatch(setShowNotificationBox(true));
+                  console.log("set sonrasi: ", showNotificationBox);
                 }}>
                 <Fontisto name="bell" size={22} color="#ffffff" />
               </Pressable>  
+              
               <Fontisto name="person" size={22} color="#ffffff" />
+              
             </View>
           </View>
 
@@ -164,22 +184,10 @@
           </View>
             
           {/* notification box controller */}
-          {showBox && (
-            <Pressable 
-              style={styles.notificationContainer}
-              onPress={() => setShowBox(false)}  // Karartılmış arka plana tıklayınca kapansın
-            >
-              <Pressable
-                style={styles.popupBox}
-                onPress={(e) => e.stopPropagation()} // İç kutuya tıklayınca arka plan kapanmasın diye
-              >
-                <Text style={{ fontWeight: 'bold' }}>📢 notifications</Text>
-                <Text>• Yeni bir görev eklendi</Text>
-                <Text>• Paylaşilan liste güncellendi</Text>
-              </Pressable>
-            </Pressable>
-          )}
+          {showNotificationBox && ( <NotificationBox/>)}
           
+          {/* Invite Friends Box Controller */}
+          {showInviteFriendBox && (<InviteFriendBox/>)}   
         </SafeAreaView>
       </KeyboardAvoidingView>
     );
@@ -191,7 +199,6 @@
     container: {
       flex: 1,
       backgroundColor: '#ecf0f1', // Same light grey background as LogInPage
-      paddingTop: Platform.OS === 'android' ? 30 : 0, // Status bar padding for Android
     },
     // --- Header Styles ---
     header: {
@@ -249,35 +256,6 @@
       textAlign: 'center',
       marginTop: 5,
     },
-
-    //--- notification Box Styles ---
-    notificationContainer: {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
-  justifyContent: 'center',
-  alignItems: 'center',
-  zIndex: 999,
-  backgroundColor: 'rgba(0,0,0,0.3)',  // İstersen arkaplan karartma
-},
-popupBox: {
-  width: 300,
-  height: 150,
-  backgroundColor: 'white',
-  padding: 15,
-  borderRadius: 10,
-  elevation: 5,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.3,
-  shadowRadius: 3,
-  justifyContent: 'center',
-  alignItems: 'center',
-},
-
-
 
     // --- List Item Styles ---
     listItem: { // Card style for each list item

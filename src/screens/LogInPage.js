@@ -43,43 +43,43 @@ const LogInPage = ({ navigation }) => {
             >
                 <View style={styles.contentWrapper}>
 
-                    <Text style={styles.title}>Hoş Geldiniz!</Text>
-                    <Text style={styles.subtitle}>Giriş yaparak devam edin</Text>
+                    <Text style={styles.title}>Welcome!</Text>
+                    <Text style={styles.subtitle}>Continue by logging in</Text>
 
                     <View style={styles.formContainer}>
                         <CustomTextInput
-                            title={"E-posta"}
-                            handlePlaceHolder={"E-posta adresinizi girin"}
+                            title={"Email"}
+                            handlePlaceHolder={"Enter Your Email Adress"}
                             handleMod={"email"}
                             handleSecurityText={false}
                             handleValue={email}
                             HandleOnChange={(value) => setEmail(value)}
-                            handleTitleColor={'#34495e'} // Koyu gri metin başlığı
+                            handleTitleColor={'#34495e'}
                         />
 
                         <CustomTextInputForPassword
-                            title={"Şifre"}
-                            handlePlaceHolder={"Şifrenizi girin"}
+                            title={"Password"}
+                            handlePlaceHolder={"Enter Your Password"}
                             handleMod={"default"}
                             handleSecurityText={true}
                             handleValue={password}
                             HandleOnChange={(value) => setPassword(value)}
-                            handleTitleColor={'#34495e'} // Koyu gri metin başliği 
+                            handleTitleColor={'#34495e'} 
                         />
 
                         <CustomButton
-                            title={'Giriş Yap'}
+                            title={'Log In'}
                             HandleonPress={handleLogin}
                             handleWidth={'80%'}
-                            handleBackground={'#2c3e50'} // logonuzdaki arka plan rengi
-                            handleTextColor={'#ecf0f1'} // logonuzdaki metin rengi
+                            handleBackground={'#2c3e50'}
+                            handleTextColor={'#ecf0f1'}
                         />
                     </View>
 
                     <View style={styles.registerPromptContainer}>
-                        <Text style={styles.registerPromptText}> Henüz bir hesabiniz yok mu?</Text>
+                        <Text style={styles.registerPromptText}> Don't have an account yet?</Text>
                         <Pressable onPress={() => navigation.navigate('Register')}>
-                            <Text style={styles.registerLinkText}>Hesap oluşturmak için tiklayin</Text>
+                            <Text style={styles.registerLinkText}>Click here to create an account</Text>
                         </Pressable>
                     </View>
                 </View>
