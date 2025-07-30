@@ -19,7 +19,7 @@
   import CustomButton from '../components/CustomButton.js';
   import { LogOut } from '../redux/userSlice.js';
   import { addTitle, deleteData, getAllData, toggleListTic } from '../redux/DataSlice.js';
-  import { setShowNotificationBox, setInviteFriendBox } from '../redux/TriggerSlice.js';
+  import { setShowNotificationBox, setInviteFriendBox, setCurrentListId } from '../redux/TriggerSlice.js';
   import Animated from 'react-native-reanimated';
   import { BounceIn, } from 'react-native-reanimated';
   import InviteFriendBox from '../components/InviteFriendBox.js';
@@ -37,6 +37,7 @@
 
     useEffect(() => {
       dispatch(getAllData());
+      
       // Added for error handling:
       if (error) {
         Alert.alert("Data Error", error);
@@ -50,7 +51,7 @@
       }
       
       // Assuming addTitle's payload returns listId and title
-      const resultAction = await dispatch(addTitle({ title: listTitle, sharedWith: [] }));
+      const resultAction = await dispatch(addTitle({ title: listTitle }));
       
       if (addTitle.fulfilled.match(resultAction)) {
         setListTitle(''); // Clear the input
@@ -63,10 +64,9 @@
     const renderItem = ({ item }) => {
       return (
         <Animated.View entering={BounceIn} style={styles.listItem}>
+          {/* Tic Control Part */}
           <Pressable
             onPress={() => {
-              // Checkbox click action (update 'tic' field in Firestore)
-              // You might consider a separate thunk or local state management for this.
               console.log("Checkbox clicked:", item.id);
               dispatch(toggleListTic(item.id))
               setIsEffect(!isEffect); // Temporarily refresh the list
@@ -79,6 +79,8 @@
               <Fontisto name="checkbox-passive" size={22} color="#7f8c8d" /> // Gray box
             )}
           </Pressable>
+
+          {/* ListDetail Navigation Part */}
           <Pressable
             onPress={() => {
               navigation.navigate('ListDetail', { listId: item.id, listTitle: item.title });
@@ -89,15 +91,38 @@
             <Text style={item.tic ? styles.listItemTextStrikethrough : styles.listItemText}>{item.title}</Text>
           </Pressable>
           
-          <Pressable style={styles.inviteUser} onPress={() => dispatch(setInviteFriendBox(true))}>
+          {/* Add User Button */} 
+          <Pressable 
+          style={styles.inviteUser}
+          onPress={() => { 
+            dispatch(setInviteFriendBox(true)), 
+            dispatch(setCurrentListId(item.id))}}
+          >
             <AntDesign name="adduser" size={24} color="black" />
           </Pressable>
+
           {/* Delete button */}
           <Pressable
               onPress={() => {
-                  dispatch(deleteData(item.id)); // Add your delete function here if you have one
-                  Alert.alert("Delete", `Do you want to delete the list "${item.title}"?`);
-                  setIsEffect(!isEffect); // For refresh
+                  // Alert.alert(title, message, buttonsArray, options);
+                  Alert.alert(
+                    "Delete",
+                    `Do you want to delete the list "${item.title}"?`,
+                    [
+                      {
+                        text: "Cancel",
+                        style: "cancel"
+                      },
+                      {
+                        text: "OK",
+                        onPress: () => {
+                          dispatch(deleteData(item.id));
+                          setIsEffect(prev => !prev);
+                        }
+                      }
+                    ]
+                  );
+
               }}
               style={styles.deleteButton}
           >
@@ -116,17 +141,22 @@
           barStyle="light-content"  // Set the icon color to light for iOS and Android 
         />
         <SafeAreaView style={styles.container}>
+
           {/* Header Section */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>My Shopping Lists</Text>
             <View style={styles.headerIcons}>
-              <Pressable onPress={() => {
+              {/* Notification Part (Bell Icon) */}
+              <Pressable 
+              onPress={() => {
                   dispatch(setShowNotificationBox(true));
                   console.log("set sonrasi: ", showNotificationBox);
-                }}>
+                }}
+              >
                 <Fontisto name="bell" size={22} color="#ffffff" />
               </Pressable>  
               
+              {/* Profile (Person Icon) */}
               <Fontisto name="person" size={22} color="#ffffff" />
               
             </View>
@@ -134,6 +164,7 @@
 
           {/* List Display */}
           {isLoading ? (
+            
             <View style={styles.loadingContainer}>
               <Text style={styles.loadingText}>Loading lists...</Text>
             </View>
@@ -154,6 +185,7 @@
           )}
 
             <View style={styles.addListInputContainer}>
+              {/* Add Button */}
               <TextInput
                 value={listTitle}
                 onChangeText={setListTitle}

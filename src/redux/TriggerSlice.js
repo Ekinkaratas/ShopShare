@@ -5,6 +5,7 @@ import { createSlice } from '@reduxjs/toolkit'
 const initialState = {
     showNotificationBox : false,
     showInviteFriendBox : false,
+    currentListId: null
 }
 
 export const TriggerSlice = createSlice({
@@ -17,8 +18,11 @@ export const TriggerSlice = createSlice({
         setInviteFriendBox: (state, action) => {
             state.showInviteFriendBox = action.payload
         },
+        setCurrentListId: (state, action) => {
+            state.currentListId = action.payload
+        }
     }
 })
 
-export const { setShowNotificationBox, setInviteFriendBox } = TriggerSlice.actions
+export const { setShowNotificationBox, setInviteFriendBox, setCurrentListId } = TriggerSlice.actions
 export default TriggerSlice.reducer
