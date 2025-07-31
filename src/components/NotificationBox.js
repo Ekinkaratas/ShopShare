@@ -1,23 +1,58 @@
-import { StyleSheet, Text, Pressable } from 'react-native'
+import { StyleSheet, Text, Pressable, FlatList, View } from 'react-native'
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import { setShowNotificationBox } from '../redux/TriggerSlice.js';
+import Animated, { BounceIn } from 'react-native-reanimated';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 const notificationBox = () => {
     const dispatch = useDispatch()
 
+    const renderItem = ({item}) =>{
+        return(
+          <Animated.View entering={BounceIn} style= {{flexDirection: 'row', justifyContent: 'space-between'}}>
+            <View>
+              <Text> { item.senderName } </Text>
+            </View>
+
+            <View>
+              <Text> { item.title } </Text>
+            </View>
+
+            <View style = {{ paddingHorizontal: 5 }}>
+              <FontAwesome name="plus" size={24} color="green" />
+
+              <MaterialIcons name="cancel" size={24} color="black" />
+            </View>
+          </Animated.View>
+        )
+    }
+
+    const pendingData = useSelector(state => state.userData.pendingData);
+
+
   return (
     <Pressable 
     style={styles.notificationContainer}
-    onPress={() => dispatch(setShowNotificationBox(false))}  // Karartılmış arka plana tıklayınca kapansın
+    onPress={() => dispatch(setShowNotificationBox(false))}
     >
         <Pressable
         style={styles.popupBox}
-        onPress={(e) => e.stopPropagation()} // İç kutuya tıklayınca arka plan kapanmasın diye
+        onPress={(e) => e.stopPropagation()} 
         >
-            <Text style={{ fontWeight: 'bold' }}>📢 notifications</Text>
-            <Text>• Yeni bir görev eklendi</Text>
-            <Text>• Paylaşilan liste güncellendi</Text>
+           <FlatList 
+              data={ pendingData }
+              renderItem={renderItem}
+              keyExtractor={item => item.id}
+              style={styles.flatList}
+              contentContainerStyle={styles.flatListContent}
+              ListEmptyComponent={() => (
+                <View style={styles.emptyListContainer}>
+                  <Text style={styles.emptyListText}>You Don't Have Any Notification Yet.</Text>
+                </View>
+              )}
+           />
         </Pressable>
     </Pressable>
   )
@@ -51,5 +86,36 @@ const styles = StyleSheet.create({
       shadowRadius: 3,
       justifyContent: 'center',
       alignItems: 'center',
+    },
+
+    // --- List (FlatList) Styles ---
+    flatList: {
+      flex: 1, // Ensures FlatList takes up available vertical space
+      paddingHorizontal: 15,
+      marginTop: 20, // Space below the header
+    },
+    flatListContent: {
+      paddingBottom: 20, // Padding at the bottom of the list content
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      fontSize: 18,
+      color: '#7f8c8d',
+    },
+    emptyListContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingTop: 50,
+    },
+    emptyListText: {
+      fontSize: 16,
+      color: '#7f8c8d',
+      textAlign: 'center',
+      marginTop: 5,
     },
 })

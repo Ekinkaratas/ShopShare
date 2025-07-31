@@ -1,8 +1,11 @@
 import React, { } from 'react';
 import { createAsyncThunk, createSlice,  } from "@reduxjs/toolkit"; 
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { auth } from '../../config/firebaseConfig';
+import { auth, db } from '../../config/firebaseConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDispatch } from 'react-redux';
+import { addUsers } from './DataSlice';
+import { doc, getDoc } from 'firebase/firestore';
 
 
 
@@ -21,7 +24,7 @@ export const LogIn = createAsyncThunk('/logIn',async({name,surname,email,passwor
         email: user.email,
       },
     };
-
+    
     await AsyncStorage.setItem('userToken', token); 
     await AsyncStorage.setItem('userUid', user.uid); 
 
@@ -32,36 +35,55 @@ export const LogIn = createAsyncThunk('/logIn',async({name,surname,email,passwor
   }
 })
 
-export const autoLogIn = createAsyncThunk('/autoLogIn', async(_ , {rejectWithValue})=>{
+export const autoLogIn = createAsyncThunk('/autoLogIn', async(_, {rejectWithValue})=>{
   try {
-   // console.log('await onu')
     const token = await AsyncStorage.getItem('userToken');
-    const uid = await AsyncStorage.getItem('userUid')
-  //console.log('await sonrasi')
+    const uid = await AsyncStorage.getItem('userUid');
 
-    if(token && uid) return {token, uid};
-    else {return  rejectWithValue('token yok')}
+    if(token && uid) {
+      // UID ile 'users' koleksiyonundan kullanıcı detaylarını çek
+      const userDocRef = doc(db, 'users', uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      let userDetails = null;
+      if (userDocSnap.exists()) {
+        userDetails = userDocSnap.data();
+      }
+
+      // Döndürülen verilere userDetails'i ekleyin
+      return { token, userUid: uid, user: userDetails }; // 'uid' yerine 'userUid' kullandım, tutarlı olması için
+    } else {
+      return rejectWithValue('token yok');
+    }
   } catch (error) {
-    console.log(`autoLogIn thunk error: `, error)
-    return rejectWithValue(error.message)
+    console.log(`autoLogIn thunk error: `, error);
+    return rejectWithValue(error.message);
   }
-})
+});
 
-export const SignUp = createAsyncThunk('/SignUp', async({ email, password, name, surname }, {rejectWithValue }) => {
+
+export const SignUp = createAsyncThunk('/SignUp', async({ email, password, name, surname }, {rejectWithValue, dispatch }) => {
   try{
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
     const user = userCredential.user
     const token = await user.getIdToken()
 
     const userData = {
+      token,
+      userUid: user.uid, 
       user: { 
         name: name,
         surname: surname,
         email: user.email,
-        uid: user.uid,
-        token
       },
     };
+
+    await dispatch(addUsers({
+      uid: user.uid,
+      name,
+      surname,
+      email: user.email
+    }));
 
     await AsyncStorage.setItem('userToken', token); 
     await AsyncStorage.setItem('userUid', user.uid); 
@@ -135,7 +157,8 @@ export const userSlice = createSlice({
           state.isLoading = false;
           state.isAuthenticated = true;
           state.token = action.payload.token;
-          state.userUid = action.payload.uid;
+          state.userUid = action.payload.userUid;
+          state.user = action.payload.user
           //console.log(`autoLoginToken: `, state.token)
           //console.log('autoLogIn.fullfilled girdi ')
         })
@@ -156,7 +179,7 @@ export const userSlice = createSlice({
           state.isAuthenticated = true
           state.user = action.payload.user
           state.token = action.payload.token
-          state.userUid = action.payload.uid
+          state.userUid = action.payload.userUid
           //console.log("fullfilled girdi")
         })
         .addCase(SignUp.rejected,(state,action) => {

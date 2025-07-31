@@ -18,7 +18,7 @@
   import NotificationBox from '../components/NotificationBox.js';
   import CustomButton from '../components/CustomButton.js';
   import { LogOut } from '../redux/userSlice.js';
-  import { addTitle, deleteData, getAllData, toggleListTic } from '../redux/DataSlice.js';
+  import { addTitle, deleteData, getAllData, toggleListTic, getPendingEmail } from '../redux/DataSlice.js';
   import { setShowNotificationBox, setInviteFriendBox, setCurrentListId } from '../redux/TriggerSlice.js';
   import Animated from 'react-native-reanimated';
   import { BounceIn, } from 'react-native-reanimated';
@@ -37,7 +37,7 @@
 
     useEffect(() => {
       dispatch(getAllData());
-      
+      dispatch(getPendingEmail())
       // Added for error handling:
       if (error) {
         Alert.alert("Data Error", error);
@@ -231,6 +231,10 @@
     container: {
       flex: 1,
       backgroundColor: '#ecf0f1', // Same light grey background as LogInPage
+      paddingTop: Platform.select({
+        ios: 20,
+        android: 25,
+      })
     },
     // --- Header Styles ---
     header: {
