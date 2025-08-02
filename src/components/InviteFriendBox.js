@@ -4,38 +4,13 @@ import { useDispatch, useSelector } from 'react-redux'
 import { setInviteFriendBox, setCurrentListId } from '../redux/TriggerSlice'
 import CustomTextInput from './CustomTextInput'
 import CustomButton from './CustomButton'
-import { arrayUnion, doc, updateDoc } from 'firebase/firestore'
-import { db } from '../../config/firebaseConfig'
+import { handleInvite } from '../redux/DataSlice'
 
 const InviteFriendBox = () => {
     const dispatch = useDispatch();
     const [email, setEmail] = useState('');
-    const currListId = useSelector((state) => state.trigger.currentListId);
 
 
-    const handleInvite = async() => {
-        try {
-            
-            console.log('email: ', email)
-
-            if (!email || email.trim() === '') {
-                Alert.alert('Warning', 'Please enter a valid email address.');
-                return;
-            }
-
-            const docRef = await doc(db,'lists', currListId)
-
-            updateDoc(docRef,{
-                invitePending: arrayUnion(email)
-            })
-
-            Alert.alert('Success', 'Invitation sent!');
-            setEmail('');
-        } catch (error) {
-            console.log("InviteFriendBox 'handleInvite' Thunk Error: ", error)
-            Alert.alert('Error',"Could Not Be Invited")
-        }
-    }
     
   return (
     <Pressable
@@ -58,7 +33,7 @@ const InviteFriendBox = () => {
             
             <CustomButton
                 title={'Sent Invite'}
-                HandleonPress={handleInvite}
+                HandleonPress={async () => {dispatch(handleInvite(email));}}
                 handleWidth={'80%'}
                 handleBackground={'#2c3e50'}
                 handleTextColor={'#ecf0f1'}

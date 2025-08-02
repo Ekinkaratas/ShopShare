@@ -1,8 +1,9 @@
 import { StyleSheet, Text, View, Alert } from 'react-native'
-import React from 'react'
-import { addDoc, collection, getDoc, getDocs, serverTimestamp, updateDoc, doc, deleteDoc, query, where, setDoc } from 'firebase/firestore'
+import React, { } from 'react'
+import { addDoc, collection, getDoc, getDocs, serverTimestamp, updateDoc, doc, deleteDoc, query, where, setDoc, arrayRemove, arrayUnion } from 'firebase/firestore'
 import { createAsyncThunk, createSlice, } from '@reduxjs/toolkit'
 import { db } from '../../config/firebaseConfig'
+import { setIsEffect } from './TriggerSlice'
 
 export const addUsers = createAsyncThunk('/user/addTitle', async (props , { rejectWithValue, }) => {
   try {
@@ -32,12 +33,12 @@ export const addTitle = createAsyncThunk('/user/addTitle', async (props, {getSta
   try {
     const state = getState()
 
-    console.log("Kullanici props:", props);
+    // console.log("Kullanici props:", props);
     if (!props.title || props.title.trim() === '') {
       return rejectWithValue("Boş başlik gönderilemez.");
     }
 
-    console.log('userUidL: ', state.user.userUid )
+    // console.log('userUidL: ', state.user.userUid )
 
     await addDoc(collection(db,'lists'), {
       title: props.title,
@@ -62,15 +63,13 @@ export const addTitle = createAsyncThunk('/user/addTitle', async (props, {getSta
   }
 });
 
-export const getAllData = createAsyncThunk(
-  '/user/getAllData',
-  async (_ , { getState, rejectWithValue }) => {
+export const getAllData = createAsyncThunk('/user/getAllData',async (_ , { getState, rejectWithValue }) => {
     try {
 
       const state = getState();
       const userUid = state.user.userUid;
 
-      console.log('userUidL: ', userUid )
+      // console.log('userUid: ', userUid )
 
       const createdByQuery = query(
         collection(db, 'lists'),
@@ -104,16 +103,14 @@ export const getAllData = createAsyncThunk(
   }
 );
 
-export const getPendingEmail = createAsyncThunk(
-  'user/getPendingEmail',
-  async (_, { getState, rejectWithValue }) => {
+export const getPendingEmail = createAsyncThunk('user/getPendingEmail',async (_, { getState, rejectWithValue, dispatch }) => {
     try {
       const state = getState();
-      const email = state.user.user.email; // Redux store'daki user slice'ından e-postayı alıyoruz
+      const userUid = state.user.userUid; // Redux store'daki user slice'ından e-postayı alıyoruz
 
       const inviteQuery = query(
         collection(db, 'lists'),
-        where('invitePending', 'array-contains', email)
+        where('invitePending', 'array-contains', userUid)
       );
 
       const allItems = [];
@@ -191,9 +188,105 @@ export const deleteData = createAsyncThunk('/user/deleteData', async(itemId , {g
   }
 })
 
+export const handleInvite = createAsyncThunk('/user/handleInvite', async(email , {getState, rejectWithValue, dispatch}) => {
+        try {
+
+            const state = getState()
+            const currListId = state.trigger.currentListId
+
+            if (!email || email.trim() === '') {
+                Alert.alert('Warning', 'Please enter a valid email address.');
+                return;
+            }
+
+            const docRef = await doc(db,'lists', currListId)
+            const docSnap = await getDoc(docRef)
+            
+            if(!docSnap.exists()){
+               Alert.alert('error', 'List Not Found, May Have Been Removed')
+               return rejectWithValue('List Not Found, May Have Been Removed');
+            }
+
+            const questRef = await query(
+                collection(db,'users'),
+                where('email', '==', email)
+            )
+
+            const questSnap = await getDocs(questRef)
+
+            if(questSnap.empty){
+               Alert.alert('error', 'User Not Found')
+               return rejectWithValue('User Not Found');
+            }
+
+            const userDoc = questSnap.docs[0];
+            const userUid = userDoc.data().userUid;
+
+            updateDoc(docRef,{
+                invitePending: arrayUnion(userUid)
+            })
+
+            Alert.alert('Success', 'Invitation sent!');
+            dispatch(setIsEffect())
+
+            return true
+        } catch (error) {
+            console.log("InviteFriendBox 'handleInvite' Thunk Error: ", error)
+            Alert.alert('Error',"Could Not Be Invited")
+        }
+    }
+  )
+
+export const inviteAccept = createAsyncThunk('user/inviteAccept', async(itemId, { getState, rejectWithValue, dispatch }) =>{
+  try {
+
+    const state = getState()
+    const userUid = state.user.userUid
+
+    const docRef = doc(db,'lists', itemId)
+
+    await updateDoc(docRef,{
+      invitePending: arrayRemove(userUid),
+      sharedWith: arrayUnion(userUid)
+    })
+    
+    dispatch(setIsEffect())
+
+    return 
+  } catch (error) {
+    console.log('inviteAccept Thunk Error:', error);
+    return rejectWithValue(error.message);
+  }
+})
+
+export const inviteReject = createAsyncThunk('user/inviteReject', async(itemId, { getState, rejectWithValue, dispatch }) =>{
+  try {
+
+    const state = getState()
+    const userUid = state.user.userUid
+
+    const docRef = doc(db,'lists', itemId)
+
+    await updateDoc(docRef,{
+      invitePending: arrayRemove(userUid)
+    })
+    
+    dispatch(setIsEffect())
+
+    return 
+  } catch (error) {
+    console.log('inviteReject Thunk Error:', error);
+    return rejectWithValue(error.message);
+  }
+})
+
+
+
+
 const initialState = {
   data: [],
   pendingData: [],
+  setData: [],
   isLoading: false,
   error: null,
 };
@@ -201,7 +294,11 @@ const initialState = {
 const DataSlice = createSlice({
   name: 'userData',
   initialState,
-  reducer:{},
+  reducer:{
+    setData: (state, action) => {
+      state.data = action.payload;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(getAllData.pending, (state) => {
@@ -229,8 +326,15 @@ const DataSlice = createSlice({
       .addCase(addUsers.rejected, (state, action) => {
       console.log("User ekleme hatası:", action.payload);
       state.error = action.payload; // istersen store’da hata gösterimi için
-    })
+      })
+      .addCase(handleInvite.rejected, (state,action) =>{
+          state.error = action.payload
+      })
+      .addCase(inviteAccept.rejected, (state,action) =>{
+          state.error = action.payload
+      })
   },
 })
 
+export const { setData } = DataSlice.actions;
 export default DataSlice.reducer

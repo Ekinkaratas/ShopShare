@@ -5,7 +5,7 @@ import { auth, db } from '../../config/firebaseConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useDispatch } from 'react-redux';
 import { addUsers } from './DataSlice';
-import { doc, getDoc } from 'firebase/firestore';
+import { arrayRemove, arrayUnion, doc, getDoc } from 'firebase/firestore';
 
 
 

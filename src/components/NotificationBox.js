@@ -5,29 +5,34 @@ import { setShowNotificationBox } from '../redux/TriggerSlice.js';
 import Animated, { BounceIn } from 'react-native-reanimated';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { inviteAccept, inviteReject } from '../redux/DataSlice.js';
 
 const notificationBox = () => {
     const dispatch = useDispatch()
 
-    const renderItem = ({item}) =>{
-        return(
-          <Animated.View entering={BounceIn} style= {{flexDirection: 'row', justifyContent: 'space-between'}}>
-            <View>
-              <Text> { item.senderName } </Text>
+    const renderItem = ({ item }) => {
+        return (
+          <Animated.View
+            entering={BounceIn}
+            style={styles.notificationCard}
+          >
+            <View style={styles.notificationTextBlock}>
+              <Text style={styles.senderName}>{item.senderName}</Text>
+              <Text style={styles.titleText}>{item.title}</Text>
             </View>
 
-            <View>
-              <Text> { item.title } </Text>
-            </View>
-
-            <View style = {{ paddingHorizontal: 5 }}>
-              <FontAwesome name="plus" size={24} color="green" />
-
-              <MaterialIcons name="cancel" size={24} color="black" />
+            <View style={styles.actionButtons}>
+              <Pressable style={styles.iconButton} onPress={() => dispatch(inviteAccept(item.id))}>
+                <FontAwesome name="plus" size={16} color="#fff" />
+              </Pressable>
+              <Pressable style={[styles.iconButton, { backgroundColor: '#e74c3c' }]} onPress ={ () => dispatch(inviteReject(item.id)) } >
+                <MaterialIcons name="cancel" size={18} color="#fff" />
+              </Pressable>
             </View>
           </Animated.View>
-        )
-    }
+        );
+      };
+
 
     const pendingData = useSelector(state => state.userData.pendingData);
 
@@ -41,18 +46,21 @@ const notificationBox = () => {
         style={styles.popupBox}
         onPress={(e) => e.stopPropagation()} 
         >
-           <FlatList 
-              data={ pendingData }
-              renderItem={renderItem}
-              keyExtractor={item => item.id}
-              style={styles.flatList}
-              contentContainerStyle={styles.flatListContent}
-              ListEmptyComponent={() => (
+           <FlatList
+            data={pendingData}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.flatListContent}
+            ListEmptyComponent={() => (
                 <View style={styles.emptyListContainer}>
                   <Text style={styles.emptyListText}>You Don't Have Any Notification Yet.</Text>
                 </View>
               )}
-           />
+            showsVerticalScrollIndicator={false}   // estetik görünüm
+            overScrollMode="always"                // Android bounce için
+            bounces={true}                         // iOS bounce
+            keyboardShouldPersistTaps="handled"
+          />
         </Pressable>
     </Pressable>
   )
@@ -75,24 +83,24 @@ const styles = StyleSheet.create({
     },
     popupBox: {
       width: 300,
-      height: 150,
+      height: 320, // Eskiden 150 idi
       backgroundColor: 'white',
       padding: 15,
-      borderRadius: 10,
+      borderRadius: 15,
       elevation: 5,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.3,
       shadowRadius: 3,
-      justifyContent: 'center',
+      justifyContent: 'flex-start', // dikkat
       alignItems: 'center',
     },
 
+
     // --- List (FlatList) Styles ---
     flatList: {
-      flex: 1, // Ensures FlatList takes up available vertical space
-      paddingHorizontal: 15,
-      marginTop: 20, // Space below the header
+      maxHeight: 250,
+      width: '100%',
     },
     flatListContent: {
       paddingBottom: 20, // Padding at the bottom of the list content
@@ -118,4 +126,53 @@ const styles = StyleSheet.create({
       textAlign: 'center',
       marginTop: 5,
     },
+
+    // render styles
+    notificationCard: {
+      backgroundColor: '#ffffff',
+      borderRadius: 15,
+      padding: 15,
+      marginBottom: 15,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 3,
+      elevation: 3,
+      width: 260, // popup içi düzgün yerleşmesi için sabitlik
+    },
+
+    notificationTextBlock: {
+      flex: 1,
+      paddingRight: 10,
+    },
+
+    senderName: {
+      fontSize: 12,
+      color: '#95a5a6',
+      marginBottom: 4,
+    },
+
+    titleText: {
+      fontSize: 15,
+      color: '#2c3e50',
+      fontWeight: '600',
+    },
+
+    actionButtons: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+
+    iconButton: {
+      backgroundColor: '#27ae60',
+      padding: 8,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+
 })

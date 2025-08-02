@@ -18,8 +18,8 @@
   import NotificationBox from '../components/NotificationBox.js';
   import CustomButton from '../components/CustomButton.js';
   import { LogOut } from '../redux/userSlice.js';
-  import { addTitle, deleteData, getAllData, toggleListTic, getPendingEmail } from '../redux/DataSlice.js';
-  import { setShowNotificationBox, setInviteFriendBox, setCurrentListId } from '../redux/TriggerSlice.js';
+  import { addTitle, deleteData, getAllData, toggleListTic, getPendingEmail, listCreatedBy } from '../redux/DataSlice.js';
+  import { setShowNotificationBox, setInviteFriendBox, setIsEffect, setCurrentListId } from '../redux/TriggerSlice.js';
   import Animated from 'react-native-reanimated';
   import { BounceIn, } from 'react-native-reanimated';
   import InviteFriendBox from '../components/InviteFriendBox.js';
@@ -28,12 +28,13 @@
     const dispatch = useDispatch();
 
     const [listTitle, setListTitle] = useState('');
-    const [isEffect, setIsEffect] = useState(false); // State used to trigger data refresh
 
     const showNotificationBox = useSelector(state => state.trigger.showNotificationBox)
     const showInviteFriendBox = useSelector(state => state.trigger.showInviteFriendBox)
+    const isEffect = useSelector(state => state.trigger.isEffect)
 
     const { data, isLoading, error } = useSelector(state => state.userData); // Also get the error state
+    const currentUserUid = useSelector(state => state.user.userUid);
 
     useEffect(() => {
       dispatch(getAllData());
@@ -55,21 +56,25 @@
       
       if (addTitle.fulfilled.match(resultAction)) {
         setListTitle(''); // Clear the input
-        setIsEffect(!isEffect); // Trigger to refresh the list
+        dispatch(setIsEffect()); //) Trigger to refresh the list
       } else {
         Alert.alert("Error", resultAction.payload || "An error occurred while adding the list.");
       }
     };
 
+
     const renderItem = ({ item }) => {
       return (
+
         <Animated.View entering={BounceIn} style={styles.listItem}>
-          {/* Tic Control Part */}
-          <Pressable
+
+           {/* Tic Control Part */}
+          {item.createdBy === currentUserUid && (
+            <Pressable
             onPress={() => {
               console.log("Checkbox clicked:", item.id);
               dispatch(toggleListTic(item.id))
-              setIsEffect(!isEffect); // Temporarily refresh the list
+              dispatch(setIsEffect());
             }}
             style={styles.checkboxContainer}
           >
@@ -78,8 +83,10 @@
             ) : (
               <Fontisto name="checkbox-passive" size={22} color="#7f8c8d" /> // Gray box
             )}
-          </Pressable>
+            </Pressable>
+          )}
 
+         
           {/* ListDetail Navigation Part */}
           <Pressable
             onPress={() => {
@@ -92,42 +99,52 @@
           </Pressable>
           
           {/* Add User Button */} 
-          <Pressable 
+          {item.createdBy === currentUserUid &&
+          (<Pressable 
           style={styles.inviteUser}
           onPress={() => { 
             dispatch(setInviteFriendBox(true)), 
-            dispatch(setCurrentListId(item.id))}}
+            dispatch(setCurrentListId(item.id)),
+            dispatch(setIsEffect())
+          }}
           >
             <AntDesign name="adduser" size={24} color="black" />
-          </Pressable>
+          </Pressable>)
+          }
+          
 
           {/* Delete button */}
-          <Pressable
-              onPress={() => {
-                  // Alert.alert(title, message, buttonsArray, options);
-                  Alert.alert(
-                    "Delete",
-                    `Do you want to delete the list "${item.title}"?`,
-                    [
-                      {
-                        text: "Cancel",
-                        style: "cancel"
-                      },
-                      {
-                        text: "OK",
-                        onPress: () => {
-                          dispatch(deleteData(item.id));
-                          setIsEffect(prev => !prev);
+          {item.createdBy === currentUserUid &&
+            (
+              <Pressable
+                onPress={() => {
+                    // Alert.alert(title, message, buttonsArray, options);
+                    Alert.alert(
+                      "Delete",
+                      `Do you want to delete the list "${item.title}"?`,
+                      [
+                        {
+                          text: "Cancel",
+                          style: "cancel"
+                        },
+                        {
+                          text: "OK",
+                          onPress: () => {
+                            dispatch(deleteData(item.id));
+                            dispatch(setIsEffect());
+                          }
                         }
-                      }
-                    ]
-                  );
+                      ]
+                    );
 
-              }}
-              style={styles.deleteButton}
-          >
-              <Text style={styles.deleteButtonText}>X</Text>
-          </Pressable>
+                }}
+                style={styles.deleteButton}
+            >
+                <Text style={styles.deleteButtonText}>X</Text>
+              </Pressable>
+            )
+          }
+
         </Animated.View>
       );
     };
