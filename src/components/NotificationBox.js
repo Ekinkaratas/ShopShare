@@ -5,7 +5,7 @@
   import Animated, { BounceIn } from 'react-native-reanimated';
   import FontAwesome from '@expo/vector-icons/FontAwesome';
   import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-  import { getPendingEmail, inviteAccept, inviteReject } from '../redux/DataSlice.js';
+  import { inviteAccept, inviteReject } from '../redux/DataSlice.js';
 
   const notificationBox = () => {
       const dispatch = useDispatch()

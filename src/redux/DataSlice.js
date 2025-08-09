@@ -5,10 +5,10 @@ import { createAsyncThunk, createSlice, } from '@reduxjs/toolkit'
 import { db } from '../../config/firebaseConfig'
 import { setIsEffect } from './TriggerSlice'
 
-export const addUsers = createAsyncThunk('/user/addTitle', async (props , { rejectWithValue, }) => {
+export const addUsers = createAsyncThunk('/user/addTitle', async (props, { rejectWithValue, }) => {
   try {
 
-    await setDoc(doc(db,'users', props.uid), {
+    await setDoc(doc(db, 'users', props.uid), {
       userUid: props.uid,
       name: props.name,
       surname: props.surname,
@@ -16,14 +16,14 @@ export const addUsers = createAsyncThunk('/user/addTitle', async (props , { reje
       createdAt: serverTimestamp(),
     });
 
-    
+
   } catch (error) {
     console.log("addUser error: ", error);
     return rejectWithValue(error.message);
   }
 });
 
-export const addTitle = createAsyncThunk('/user/addTitle', async (props, {getState, rejectWithValue }) => {
+export const addTitle = createAsyncThunk('/user/addTitle', async (props, { getState, rejectWithValue }) => {
   try {
     const state = getState()
 
@@ -34,7 +34,7 @@ export const addTitle = createAsyncThunk('/user/addTitle', async (props, {getSta
 
     // console.log('userUidL: ', state.user.userUid )
 
-    await addDoc(collection(db,'lists'), {
+    await addDoc(collection(db, 'lists'), {
       title: props.title,
       createdBy: state.user.userUid,
       sharedWith: [],
@@ -62,7 +62,7 @@ export const addTitle = createAsyncThunk('/user/addTitle', async (props, {getSta
 //       const combinedDocs = createdSnapshot.docs.concat(
 //         sharedSnapshot.docs.filter((doc) => !createdSnapshot.docs.some((createdDoc) => createdDoc.id === doc.id))
 //       );
-      
+
 //       const userUids = new Set();
 //       combinedDocs.forEach(doc => {
 //         const data = doc.data();
@@ -81,7 +81,7 @@ export const addTitle = createAsyncThunk('/user/addTitle', async (props, {getSta
 //           usersMap[snap.id] = { uid: snap.id, ...snap.data() };
 //         }
 //       });
-      
+
 //       // Doğrudan `map` işleminin sonucunu döndürüyoruz
 //       return combinedDocs.map(doc => {
 //         const data = doc.data();
@@ -147,18 +147,18 @@ export const addTitle = createAsyncThunk('/user/addTitle', async (props, {getSta
 //   }
 // );
 
-export const listenToPendingInvitation = (userUid) => async(dispatch) => {
+export const listenToPendingInvitation = (userUid) => async (dispatch) => {
   try {
     const invitationQuery = query(
-      collection(db,'lists'),
+      collection(db, 'lists'),
       where('invitePending', 'array-contains', userUid)
     )
 
-    const unsubscribe = onSnapshot(invitationQuery, async(InvitationSnap) => {
-      await processPendingInvitationSnapshot(InvitationSnap,dispatch,userUid);
+    const unsubscribe = onSnapshot(invitationQuery, async (InvitationSnap) => {
+      await processPendingInvitationSnapshot(InvitationSnap, dispatch, userUid);
     })
 
-    return () =>{
+    return () => {
       unsubscribe()
     }
   } catch (error) {
@@ -166,7 +166,7 @@ export const listenToPendingInvitation = (userUid) => async(dispatch) => {
   }
 }
 
-export const deleteData = createAsyncThunk('/user/deleteData', async(listId , {getState, rejectWithValue, dispatch}) => {
+export const deleteData = createAsyncThunk('/user/deleteData', async (listId, { getState, rejectWithValue, dispatch }) => {
   try {
 
     if (!listId) {
@@ -174,7 +174,7 @@ export const deleteData = createAsyncThunk('/user/deleteData', async(listId , {g
       return rejectWithValue("Liste ID'si geçersiz.");
     }
 
-    await deleteDoc(doc(db,'lists', listId))
+    await deleteDoc(doc(db, 'lists', listId))
     Alert.alert("Successful", "Document deleted successfully.");
 
     dispatch(setIsEffect())
@@ -187,165 +187,182 @@ export const deleteData = createAsyncThunk('/user/deleteData', async(listId , {g
   }
 })
 
-export const handleInvite = createAsyncThunk('/user/handleInvite', async(email , {getState, rejectWithValue, dispatch}) => {
-        try {
+export const handleInvite = createAsyncThunk('/user/handleInvite', async (email, { getState, rejectWithValue, dispatch }) => {
+  try {
 
-            const state = getState()
-            const currListId = state.trigger.currentListId
+    const state = getState()
+    const currListId = state.trigger.currentListId
 
-            if (!email || email.trim() === '') {
-                Alert.alert('Warning', 'Please enter a valid email address.');
-                return;
-            }
-
-            const docRef = await doc(db,'lists', currListId)
-            const docSnap = await getDoc(docRef)
-            
-            if(!docSnap.exists()){
-               Alert.alert('error', 'List Not Found, May Have Been Removed')
-               return rejectWithValue('List Not Found, May Have Been Removed');
-            }
-
-            const questRef = await query(
-                collection(db,'users'),
-                where('email', '==', email)
-            )
-
-            const questSnap = await getDocs(questRef)
-
-            if(questSnap.empty){
-               Alert.alert('error', 'User Not Found')
-               return rejectWithValue('User Not Found');
-            }
-
-            const userDoc = questSnap.docs[0];
-            const userUid = userDoc.data().userUid;
-
-            updateDoc(docRef,{
-                invitePending: arrayUnion(userUid)
-            })
-
-            Alert.alert('Success', 'Invitation sent!');
-            dispatch(setIsEffect())
-
-            return true
-        } catch (error) {
-            console.log("InviteFriendBox 'handleInvite' Thunk Error: ", error)
-            Alert.alert('Error',"Could Not Be Invited")
-        }
+    if (!email || email.trim() === '') {
+      Alert.alert('Warning', 'Please enter a valid email address.');
+      return;
     }
-  )
 
-export const inviteAccept = createAsyncThunk('user/inviteAccept', async(itemId, { getState, rejectWithValue, dispatch }) =>{
+    const docRef = await doc(db, 'lists', currListId)
+    const docSnap = await getDoc(docRef)
+
+    if (!docSnap.exists()) {
+      Alert.alert('error', 'List Not Found, May Have Been Removed')
+      return rejectWithValue('List Not Found, May Have Been Removed');
+    }
+
+    const questRef = await query(
+      collection(db, 'users'),
+      where('email', '==', email)
+    )
+
+    const questSnap = await getDocs(questRef)
+
+    if (questSnap.empty) {
+      Alert.alert('error', 'User Not Found')
+      return rejectWithValue('User Not Found');
+    }
+
+    const userDoc = questSnap.docs[0];
+    const userUid = userDoc.data().userUid;
+
+    updateDoc(docRef, {
+      invitePending: arrayUnion(userUid)
+    })
+
+    Alert.alert('Success', 'Invitation sent!');
+    dispatch(setIsEffect())
+
+    return true
+  } catch (error) {
+    console.log("InviteFriendBox 'handleInvite' Thunk Error: ", error)
+    Alert.alert('Error', "Could Not Be Invited")
+  }
+}
+)
+
+export const inviteAccept = createAsyncThunk('user/inviteAccept', async (itemId, { getState, rejectWithValue, dispatch }) => {
   try {
 
     const state = getState()
     const userUid = state.user.userUid
 
-    const docRef = doc(db,'lists', itemId)
+    const docRef = doc(db, 'lists', itemId)
 
-    await updateDoc(docRef,{
+    await updateDoc(docRef, {
       invitePending: arrayRemove(userUid),
       sharedWith: arrayUnion(userUid)
     })
-    
+
     dispatch(setIsEffect())
 
-    return 
+    return
   } catch (error) {
     console.log('inviteAccept Thunk Error:', error);
     return rejectWithValue(error.message);
   }
 })
 
-export const inviteReject = createAsyncThunk('user/inviteReject', async(itemId, { getState, rejectWithValue, dispatch }) =>{
+export const inviteReject = createAsyncThunk('user/inviteReject', async (itemId, { getState, rejectWithValue, dispatch }) => {
   try {
 
     const state = getState()
     const userUid = state.user.userUid
 
-    const docRef = doc(db,'lists', itemId)
+    const docRef = doc(db, 'lists', itemId)
 
-    await updateDoc(docRef,{
+    await updateDoc(docRef, {
       invitePending: arrayRemove(userUid)
     })
-    
+
     dispatch(setIsEffect())
 
-    return 
+    return
   } catch (error) {
     console.log('inviteReject Thunk Error:', error);
     return rejectWithValue(error.message);
   }
 })
 
-export const addItem = createAsyncThunk('user/listId/addItem', async({ mission, quantity, listId }, { getState, rejectWithValue, dispatch }) => {
-    try {
-      const state = getState();
+export const addItem = createAsyncThunk('user/listId/addItem', async ({ mission, quantity, listId }, { getState, rejectWithValue, dispatch }) => {
+  try {
+    const state = getState();
 
-      await addDoc(collection(db, 'lists', listId, 'items'), {
-        mission,
-        quantity,
-        isBought: false,
-        addedBy: state.user.userUid,
-        addedAt: serverTimestamp(),
-      });
+    await addDoc(collection(db, 'lists', listId, 'items'), {
+      mission,
+      quantity,
+      isBought: false,
+      addedBy: state.user.userUid,
+      addedAt: serverTimestamp(),
+    });
 
-      dispatch(setIsEffect())
+    dispatch(setIsEffect())
 
 
-    } catch (error) {
-      console.log("addItem error: ", error);
-      return rejectWithValue(error.message);
-    }
+  } catch (error) {
+    console.log("addItem error: ", error);
+    return rejectWithValue(error.message);
   }
+}
 );
 
-export const findAllItem = createAsyncThunk('user/listId/findAllItem',async (listId, { rejectWithValue, dispatch }) => {
-    try {
-      const docsSnapshot = await getDocs(collection(db, 'lists', listId, 'items'));
+// export const findAllItem = createAsyncThunk('user/listId/findAllItem',async (listId, { rejectWithValue, dispatch }) => {
+//     try {
+//       const docsSnapshot = await getDocs(collection(db, 'lists', listId, 'items'));
 
-      const items = [];
+//       const items = [];
 
-      docsSnapshot.forEach((doc) => {
-        const data = doc.data();
-        items.push({
-          id: doc.id,
-          mission: data.mission,
-          quantity: data.quantity,
-          isBought: data.isBought || false,
-        });
-      });
+//       docsSnapshot.forEach((doc) => {
+//         const data = doc.data();
+//         items.push({
+//           id: doc.id,
+//           mission: data.mission,
+//           quantity: data.quantity,
+//           isBought: data.isBought || false,
+//         });
+//       });
 
-      let allItemIsBought = true;
-      if(items.length === 0){
-        allItemIsBought = false 
-      }else{
-        for(const item of items){
-          if(!item.isBought){
-            allItemIsBought = false;
-            break;
-          }
-        }
-      }
-      
-       dispatch(setListBuyStatus({ listId, status: allItemIsBought}))
+//       let allItemIsBought = true;
+//       if(items.length === 0){
+//         allItemIsBought = false 
+//       }else{
+//         for(const item of items){
+//           if(!item.isBought){
+//             allItemIsBought = false;
+//             break;
+//           }
+//         }
+//       }
 
-      return items;
+//       dispatch(setListBuyStatus({ listId, status: allItemIsBought}))
 
-    } catch (error) {
-      console.log("findAllItem error: ", error);
-      return rejectWithValue(error.message);
-    }
+//       return items;
+
+//     } catch (error) {
+//       console.log("findAllItem error: ", error);
+//       return rejectWithValue(error.message);
+//     }
+//   }
+// );
+
+export const listenToFindAllItem = (listId) => async(dispatch) => {
+  try {
+    const itemsCollectionRef = collection(db, 'lists', listId, 'items');
+
+    const unsubscribe = onSnapshot(itemsCollectionRef, async(querySnapshot) => {
+      await processFindAllItemSnapshot(querySnapshot, dispatch, listId);
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+
+  } catch (error) {
+    console.log("listenToFindAllItem error: ", error);
   }
-);
+}
 
-export const deleteUser  = createAsyncThunk('user/listId/deleteUser', async({listId, userUid}, {rejectWithValue, dispatch}) => {
+export const deleteUser = createAsyncThunk('user/listId/deleteUser', async ({ listId, userUid }, { rejectWithValue, dispatch }) => {
   try {
     const docRef = doc(db, 'lists', listId)
 
-    await updateDoc(docRef,{
-      sharedWith : arrayRemove(userUid)
+    await updateDoc(docRef, {
+      sharedWith: arrayRemove(userUid)
     })
 
     dispatch(setIsEffect())
@@ -356,7 +373,7 @@ export const deleteUser  = createAsyncThunk('user/listId/deleteUser', async({lis
   }
 })
 
-export const deleteItem = createAsyncThunk('user/listId/deleteItem', async({listId, itemId}, {rejectWithValue, dispatch}) => {
+export const deleteItem = createAsyncThunk('user/listId/deleteItem', async ({ listId, itemId }, { rejectWithValue, dispatch }) => {
   try {
 
     if (!listId) {
@@ -364,7 +381,7 @@ export const deleteItem = createAsyncThunk('user/listId/deleteItem', async({list
       return rejectWithValue("Liste ID'si geçersiz.");
     }
 
-    await deleteDoc(doc(db,'lists', listId, 'items', itemId))
+    await deleteDoc(doc(db, 'lists', listId, 'items', itemId))
     Alert.alert("Successful", "Document deleted successfully.");
 
     dispatch(setIsEffect())
@@ -376,48 +393,48 @@ export const deleteItem = createAsyncThunk('user/listId/deleteItem', async({list
 })
 
 export const toggleBought = createAsyncThunk('user/listId/toggleBought', async ({ listId, itemId }, { rejectWithValue, dispatch }) => {
-    try {
+  try {
 
-      if (!itemId || !listId) {
-        return rejectWithValue("Geçersiz item veya liste ID.");
-      }
-
-      const itemRef = doc(db, 'lists', listId, 'items', itemId);
-      const itemSnap = await getDoc(itemRef);
-
-      if (!itemSnap.exists()) {
-        return rejectWithValue('Item not found');
-      }
-
-      
-
-      const currentStatus = itemSnap.data().isBought || false;
-
-      await updateDoc(itemRef, {
-        isBought: !currentStatus,
-      });
-
-      dispatch(setIsEffect())
-
-      return { itemId, isBought: !currentStatus };
-
-    } catch (error) {
-      console.log("toggleBought error: ", error);
-      return rejectWithValue(error.message);
+    if (!itemId || !listId) {
+      return rejectWithValue("Geçersiz item veya liste ID.");
     }
+
+    const itemRef = doc(db, 'lists', listId, 'items', itemId);
+    const itemSnap = await getDoc(itemRef);
+
+    if (!itemSnap.exists()) {
+      return rejectWithValue('Item not found');
+    }
+
+
+
+    const currentStatus = itemSnap.data().isBought || false;
+
+    await updateDoc(itemRef, {
+      isBought: !currentStatus,
+    });
+
+    dispatch(setIsEffect())
+
+    return { itemId, isBought: !currentStatus };
+
+  } catch (error) {
+    console.log("toggleBought error: ", error);
+    return rejectWithValue(error.message);
+  }
 });
 
-export const listenToUserLists = (userUid) => (dispatch) =>{
+export const listenToUserLists = (userUid) => (dispatch) => {
   try {
-    
-    const createdByQuery = query(collection(db,'lists'), where('createdBy', '==', userUid))
-    const sharedWithQuery = query(collection(db,'lists'), where('sharedWith', 'array-contains', userUid))
 
-    const unsubCreated = onSnapshot(createdByQuery, async(createdSnapshot) =>{
+    const createdByQuery = query(collection(db, 'lists'), where('createdBy', '==', userUid))
+    const sharedWithQuery = query(collection(db, 'lists'), where('sharedWith', 'array-contains', userUid))
+
+    const unsubCreated = onSnapshot(createdByQuery, async (createdSnapshot) => {
       await processgetAllDataSnapshot(createdSnapshot, dispatch, userUid);
     })
 
-    const unsubShared = onSnapshot(sharedWithQuery, async(sharedWithSnapshot) => {
+    const unsubShared = onSnapshot(sharedWithQuery, async (sharedWithSnapshot) => {
       await processgetAllDataSnapshot(sharedWithSnapshot, dispatch, userUid);
     })
 
@@ -431,7 +448,7 @@ export const listenToUserLists = (userUid) => (dispatch) =>{
   }
 }
 
-const processgetAllDataSnapshot = async(snapshot, dispatch, currentUserUid) =>{
+const processgetAllDataSnapshot = async (snapshot, dispatch, currentUserUid) => {
   try {
     const docsArray = snapshot.docs;
 
@@ -439,20 +456,20 @@ const processgetAllDataSnapshot = async(snapshot, dispatch, currentUserUid) =>{
 
     docsArray.forEach((doc) => {
       const data = doc.data()
-      if(data.createdBy) userUids.add(data.createdBy)
-      if(Array.isArray(data.sharedWith)){
+      if (data.createdBy) userUids.add(data.createdBy)
+      if (Array.isArray(data.sharedWith)) {
         data.sharedWith.forEach(uid => userUids.add(uid))
       }
     })
 
-    const userPromises = [...userUids].map(uid => getDoc(doc(db,'users', uid)))
+    const userPromises = [...userUids].map(uid => getDoc(doc(db, 'users', uid)))
     const userSnapshots = await Promise.all(userPromises)
 
     const usersMap = {}
     userSnapshots.forEach(user => {
-      if(user.exists()){
-        usersMap[user.id] = { uid: user.uid , ...user.data()}
-      } 
+      if (user.exists()) {
+        usersMap[user.id] = { uid: user.uid, ...user.data() }
+      }
     });
 
 
@@ -473,7 +490,7 @@ const processgetAllDataSnapshot = async(snapshot, dispatch, currentUserUid) =>{
   }
 }
 
-const processPendingInvitationSnapshot = async(snapshot, dispatch, currentUserUid) =>{
+const processPendingInvitationSnapshot = async (snapshot, dispatch, currentUserUid) => {
   try {
     const docsArray = snapshot.docs;
     const invitations = [];
@@ -510,6 +527,34 @@ const processPendingInvitationSnapshot = async(snapshot, dispatch, currentUserUi
   }
 }
 
+const processFindAllItemSnapshot = async (snapshot, dispatch, listId) => {
+  try {
+    const allItems = []
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      allItems.push({
+        id: doc.id,
+        mission: data.mission,
+        quantity: data.quantity,
+        isBought: data.isBought || false,
+      });
+    })
+
+    const allItemIsBought = allItems.length > 0 && allItems.every(item => item.isBought);
+
+    dispatch(setListBuyStatus({ listId, status: allItemIsBought }))
+
+    allItems.sort((a, b) => {
+      const missionCompare = a.mission.localeCompare(b.mission);
+      return missionCompare !== 0 ? missionCompare : (a.addedAt - b.addedAt);
+    });
+    dispatch(setAllItems(allItems))
+  } catch (error) {
+    console.error("processFindAllItemSnapshot error:", error);
+  }
+}
+
 const initialState = {
   data: [],
   pendingData: [],
@@ -523,12 +568,15 @@ const initialState = {
 const DataSlice = createSlice({
   name: 'userData',
   initialState,
-  reducers:{
+  reducers: {
     setAllData: (state, action) => {
       state.data = action.payload;
     },
     setPendingData: (state, action) => {
       state.pendingData = action.payload;
+    },
+    setAllItems: (state, action) => {
+      state.items = action.payload;
     },
     clearItems: (state) => {
       state.items = [];
@@ -567,42 +615,42 @@ const DataSlice = createSlice({
       //   state.error = action.payload
       // })
       .addCase(addUsers.rejected, (state, action) => {
-      console.log("User ekleme hatası:", action.payload);
-      state.error = action.payload; // istersen store’da hata gösterimi için
+        console.log("User ekleme hatası:", action.payload);
+        state.error = action.payload; // istersen store’da hata gösterimi için
       })
-      .addCase(handleInvite.rejected, (state,action) =>{
-          state.error = action.payload
+      .addCase(handleInvite.rejected, (state, action) => {
+        state.error = action.payload
       })
-      .addCase(inviteAccept.rejected, (state,action) =>{
-          state.error = action.payload
+      .addCase(inviteAccept.rejected, (state, action) => {
+        state.error = action.payload
       })
-      .addCase(addItem.pending, (state) =>{
-          state.isLoading = true
+      .addCase(addItem.pending, (state) => {
+        state.isLoading = true
       })
-      .addCase(addItem.fulfilled, (state) =>{
-          state.isLoading = false
-          setIsEffect()
+      .addCase(addItem.fulfilled, (state) => {
+        state.isLoading = false
+        setIsEffect()
       })
-      .addCase(addItem.rejected, (state,action) =>{
-          state.isLoading = false
-          state.error = action.payload
+      .addCase(addItem.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload
       })
-      .addCase(findAllItem.pending, (state) =>{
-          state.isLoading = true
-      })
-      .addCase(findAllItem.fulfilled, (state, action) => {
-          state.isLoading = false;
-          state.items = action.payload;
-      })
-      .addCase(findAllItem.rejected, (state,action) =>{
-          state.isLoading = false
-          state.error = action.payload
-      })
-      .addCase(deleteUser.rejected, (state,action) => {
+      // .addCase(findAllItem.pending, (state) =>{
+      //     state.isLoading = true
+      // })
+      // .addCase(findAllItem.fulfilled, (state, action) => {
+      //     state.isLoading = false;
+      //     state.items = action.payload;
+      // })
+      // .addCase(findAllItem.rejected, (state,action) =>{
+      //     state.isLoading = false
+      //     state.error = action.payload
+      // })
+      .addCase(deleteUser.rejected, (state, action) => {
         state.error = action.payload
       })
   },
 })
 
-export const { setAllData, setPendingData, clearItems, setListBuyStatus, setListNumberOfUsers, } = DataSlice.actions;
+export const { setAllData, setPendingData, setAllItems, clearItems, setListBuyStatus, setListNumberOfUsers, } = DataSlice.actions;
 export default DataSlice.reducer

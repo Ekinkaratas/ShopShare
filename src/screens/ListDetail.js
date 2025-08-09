@@ -1,32 +1,40 @@
 import { StyleSheet, Text, View, Pressable, SafeAreaView, TextInput, FlatList, Alert, StatusBar, Platform } from 'react-native'
 import React, {useEffect, useState} from 'react'
 import { useRoute } from '@react-navigation/native'
-import AntDesign from '@expo/vector-icons/AntDesign';
 import Fontisto from '@expo/vector-icons/Fontisto';
 import { useDispatch, useSelector } from 'react-redux'
-import { addItem, toggleBought, findAllItem, clearItems, deleteItem } from '../redux/DataSlice'
+import { addItem, toggleBought,  listenToFindAllItem, deleteItem } from '../redux/DataSlice'
 import Animated from 'react-native-reanimated';
 import { Picker } from '@react-native-picker/picker';
 import ListUsers from '../components/ListUsers';
 import Header from '../components/Header';
+import { setIsBoxVisible } from '../redux/TriggerSlice';
 
 const ListPage = ({navigation}) => {
  const route = useRoute()
  const dispatch = useDispatch()
  const [mission, setMission] = useState('')
  const [quantity, setQuantity] = useState(1);
- const [isBoxVisible, setIsBoxVisible] = useState(false);
+
+ const isBoxVisible = useSelector(state => state.trigger.isBoxVisible)
+ 
  const { listId, listTitle } = route.params
 
  const items = useSelector(state => state.userData.items)
- const isEffect = useSelector(state => state.trigger.isEffect)
 
  const quantityOptions = Array.from({length: 100}, (_,i) => i+1)
 
- useEffect ( () => {
-  dispatch(clearItems())
-  dispatch(findAllItem(listId))
- },[isEffect, listId, dispatch])
+ useEffect(() => {
+  const unsubscribe = dispatch(listenToFindAllItem(listId));
+  return () => {
+    try {
+      unsubscribe?.();
+    } catch (e) {
+      console.error("Unsubscribe error:", e);
+    }
+  };
+}, [dispatch, listId]);
+
 
  const handleMissionChange = (value) => {
   setMission(value);
@@ -170,7 +178,7 @@ const ListPage = ({navigation}) => {
    </View>
 
    {isBoxVisible && (
-      <Pressable style={styles.overlay} onPress={() => setIsBoxVisible(false)}>
+      <Pressable style={styles.overlay} onPress={() => dispatch(setIsBoxVisible(false))}>
         <Pressable style={styles.myBox} onPress={(e) => {
           // This stops the touch event from "bubbling" up to the overlay
           e.stopPropagation();

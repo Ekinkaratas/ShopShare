@@ -1,37 +1,64 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native'
-import React from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { Ionicons } from '@expo/vector-icons'
-import { deleteUser } from '../redux/DataSlice'
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Ionicons } from '@expo/vector-icons';
+import { deleteUser } from '../redux/DataSlice';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import { createSelector } from '@reduxjs/toolkit';
 
 const ListUsers = ({ listId }) => {
-  const dispatch = useDispatch()
-  const currentList = useSelector(state =>
-    state.userData.data.find(item => item.id === listId)
+  const dispatch = useDispatch();
+
+  // Memoized selector for current list
+  const selectCurrentList = createSelector(
+    [state => state.userData.data],
+    data => data.find(item => item.id === listId)
   );
+  const currentList = useSelector(selectCurrentList);
+
+  // Memoized selector for all users map
+  const selectAllUsersMap = createSelector(
+    [state => state.userData.data],
+    data => {
+      const map = {};
+      data.forEach(list => {
+        if (list.createdByUserData) {
+          map[list.createdByUserData.uid] = list.createdByUserData;
+        }
+        if (list.sharedWithUserData) {
+          list.sharedWithUserData.forEach(u => {
+            map[u.uid] = u;
+          });
+        }
+      });
+      return map;
+    }
+  );
+  const allUsersMap = useSelector(selectAllUsersMap);
 
   const sharedWithUsers = currentList?.sharedWithUserData || [];
   const invitePendingUids = currentList?.invitePending || [];
-
   const createdByUser = currentList?.createdByUserData || null;
 
-  const allUsersMap = useSelector(state => {
-    const map = {};
-    state.userData.data.forEach(list => {
-      if (list.createdByUserData) {
-        map[list.createdByUserData.uid] = list.createdByUserData;
-      }
-      if (list.sharedWithUserData) {
-        list.sharedWithUserData.forEach(u => {
-          map[u.uid] = u;
-        });
-      }
-    });
-    return map;
-  });
+  // Prepare users with proper keys
+  const invitePendingUsers = invitePendingUids
+    .map(uid => allUsersMap[uid])
+    .filter(Boolean)
+    .map(user => ({ ...user, key: user.uid || `pending-${Math.random()}` }));
 
-  const invitePendingUsers = invitePendingUids.map(uid => allUsersMap[uid]).filter(Boolean);
+  const sharedWithUsersWithKeys = sharedWithUsers.map(user => ({
+    ...user,
+    key: user.uid || `shared-${Math.random()}`
+  }));
+
+  const handleDeleteUser = (userUid) => {
+    if (!userUid) {
+      console.error("Cannot delete user: UID is undefined!");
+      return;
+    }
+    console.log("Deleting user UID:", userUid);
+    dispatch(deleteUser({ listId, userUid }));
+  };
 
   return (
     <View style={styles.container}>
@@ -40,27 +67,28 @@ const ListUsers = ({ listId }) => {
           <Text style={styles.sectionTitle}>List Creator</Text>
           <View style={styles.userItem}>
             <Ionicons name="person-circle" size={26} color="#2980b9" />
-            <Text style={[styles.userName, styles.creatorName]}>{createdByUser.name} {createdByUser.surname || ''}</Text>
+            <Text style={[styles.userName, styles.creatorName]}>
+              {createdByUser.name} {createdByUser.surname || ''}
+            </Text>
           </View>
         </View>
       )}
 
-      {sharedWithUsers.length > 0 && (
+      {sharedWithUsersWithKeys.length > 0 && (
         <View style={styles.listContainer}>
           <Text style={styles.sectionTitle}>Shared With</Text>
-          {sharedWithUsers.map(user => (
-            <View key={user.uid} style={styles.userItem}>
+          {sharedWithUsersWithKeys.map(user => (
+            <View key={user.key} style={styles.userItem}>
               <Ionicons name="person" size={22} color="#34495e" />
               <Text style={styles.userName}>{user.name}</Text>
-              {
-                createdByUser && (
-                  <Pressable onPress={() => {dispatch(deleteUser({listId, userUid: user.uid}))}}>
-                    <AntDesign name="deleteuser" size={24} color="red" />
-                  </Pressable>
-                )
-              }
-              
-              
+              {createdByUser && (
+                <Pressable 
+                  onPress={() => handleDeleteUser(user.uid)}  // Changed from user.data?.uid to user.uid
+                  style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+                >
+                  <AntDesign name="deleteuser" size={24} color="red" />
+                </Pressable>
+              )}
             </View>
           ))}
         </View>
@@ -70,7 +98,7 @@ const ListUsers = ({ listId }) => {
         <View style={styles.listContainer}>
           <Text style={styles.sectionTitle}>Pending Invites</Text>
           {invitePendingUsers.map(user => (
-            <View key={user.uid} style={styles.userItem}>
+            <View key={user.key} style={styles.userItem}>
               <Ionicons name="mail" size={22} color="#7f8c8d" />
               <Text style={[styles.userName, styles.pendingName]}>{user.name}</Text>
             </View>
@@ -83,6 +111,7 @@ const ListUsers = ({ listId }) => {
 
 export default ListUsers;
 
+// Stylesheet
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 15,

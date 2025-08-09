@@ -7,6 +7,7 @@ const initialState = {
     showInviteFriendBox : false,
     showProfileBox: false,
     isEffect: false,
+    isBoxVisible: false,
     currentListId: null
 }
 
@@ -26,11 +27,14 @@ export const TriggerSlice = createSlice({
         setShowProfileBox: (state, action) => {
             state.showProfileBox = action.payload
         },
+        setIsBoxVisible: (state, action) => {
+            state.isBoxVisible = action.payload
+        },
         setIsEffect: (state) => {
             state.isEffect = !state.isEffect
         }
     }
 })
 
-export const { setShowNotificationBox, setInviteFriendBox, setIsEffect, setCurrentListId, setShowProfileBox } = TriggerSlice.actions
+export const { setShowNotificationBox, setInviteFriendBox, setIsEffect, setCurrentListId, setIsBoxVisible, setShowProfileBox } = TriggerSlice.actions
 export default TriggerSlice.reducer
