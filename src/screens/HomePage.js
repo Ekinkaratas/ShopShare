@@ -18,11 +18,14 @@
   import NotificationBox from '../components/NotificationBox.js';
   import CustomButton from '../components/CustomButton.js';
   import { LogOut } from '../redux/userSlice.js';
-  import { addTitle, deleteData, getAllData, toggleListTic, getPendingEmail, listCreatedBy } from '../redux/DataSlice.js';
-  import { setShowNotificationBox, setInviteFriendBox, setIsEffect, setCurrentListId } from '../redux/TriggerSlice.js';
+  import { addTitle, deleteData, getAllData, toggleListTic, getPendingEmail, listCreatedBy, setData, listenToUserLists,listenToPendingInvitation } from '../redux/DataSlice.js';
+  import { setShowNotificationBox, setInviteFriendBox, setIsEffect, setCurrentListId, setShowProfileBox } from '../redux/TriggerSlice.js';
   import Animated from 'react-native-reanimated';
   import { BounceIn, } from 'react-native-reanimated';
   import InviteFriendBox from '../components/InviteFriendBox.js';
+  import ProfileBox from '../components/ProfileBox.js';
+  import Header from '../components/Header.js';
+  import { doc, onSnapshot } from 'firebase/firestore';
 
   const HomePage = ({navigation}) => {
     const dispatch = useDispatch();
@@ -31,19 +34,37 @@
 
     const showNotificationBox = useSelector(state => state.trigger.showNotificationBox)
     const showInviteFriendBox = useSelector(state => state.trigger.showInviteFriendBox)
+    const showProfileBox = useSelector(state => state.trigger.showProfileBox)
+
     const isEffect = useSelector(state => state.trigger.isEffect)
 
-    const { data, isLoading, error } = useSelector(state => state.userData); // Also get the error state
+    const { data, isLoading, error, listBuyStatus, } = useSelector(state => state.userData); // Also get the error state
     const currentUserUid = useSelector(state => state.user.userUid);
 
     useEffect(() => {
-      dispatch(getAllData());
-      dispatch(getPendingEmail())
-      // Added for error handling:
-      if (error) {
-        Alert.alert("Data Error", error);
-      }
-    }, [isEffect, error, ]); // useEffect also triggers when error changes
+      // Store unsubscribe functions
+      let unsubToUserLists;
+      let unsubToPendingInvitation;
+
+      // Initialize listeners
+      const setupListeners = async () => {
+        unsubToUserLists = await dispatch(listenToUserLists(currentUserUid));
+        unsubToPendingInvitation = await dispatch(listenToPendingInvitation(currentUserUid));
+      };
+
+      setupListeners();
+
+      // Cleanup function
+      return () => {
+        // Check if unsubscribe functions exist before calling them
+        if (unsubToUserLists && typeof unsubToUserLists === 'function') {
+          unsubToUserLists();
+        }
+        if (unsubToPendingInvitation && typeof unsubToPendingInvitation === 'function') {
+          unsubToPendingInvitation();
+        }
+      };
+    }, [dispatch, currentUserUid]);
 
     const handleAddList = async () => {
       if (listTitle.trim() === '') {
@@ -62,28 +83,21 @@
       }
     };
 
-
     const renderItem = ({ item }) => {
-      return (
+      const isAllBought = listBuyStatus[item.id] || false;
 
+      return (
         <Animated.View entering={BounceIn} style={styles.listItem}>
 
-           {/* Tic Control Part */}
+           {/* isAllBought Control Part */}
           {item.createdBy === currentUserUid && (
-            <Pressable
-            onPress={() => {
-              console.log("Checkbox clicked:", item.id);
-              dispatch(toggleListTic(item.id))
-              dispatch(setIsEffect());
-            }}
-            style={styles.checkboxContainer}
-          >
-            {item.tic ? (
-              <Fontisto name="checkbox-active" size={22} color="#2ecc71" /> // Green check
-            ) : (
-              <Fontisto name="checkbox-passive" size={22} color="#7f8c8d" /> // Gray box
-            )}
-            </Pressable>
+            <View style={styles.checkboxContainer}>
+              {isAllBought ? (
+                <Fontisto name="checkbox-active" size={22} color="#2ecc71" /> // Green check
+              ) : (
+                <Fontisto name="checkbox-passive" size={22} color="#7f8c8d" /> // Gray box
+              )}
+            </View>
           )}
 
          
@@ -95,7 +109,7 @@
             }}
             style={styles.listItemTextContainer}
           >
-            <Text style={item.tic ? styles.listItemTextStrikethrough : styles.listItemText}>{item.title}</Text>
+            <Text style={isAllBought ? styles.listItemTextStrikethrough : styles.listItemText}>{item.title}</Text>
           </Pressable>
           
           {/* Add User Button */} 
@@ -131,7 +145,6 @@
                           text: "OK",
                           onPress: () => {
                             dispatch(deleteData(item.id));
-                            dispatch(setIsEffect());
                           }
                         }
                       ]
@@ -160,24 +173,14 @@
         <SafeAreaView style={styles.container}>
 
           {/* Header Section */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>My Shopping Lists</Text>
-            <View style={styles.headerIcons}>
-              {/* Notification Part (Bell Icon) */}
-              <Pressable 
-              onPress={() => {
-                  dispatch(setShowNotificationBox(true));
-                  console.log("set sonrasi: ", showNotificationBox);
-                }}
-              >
-                <Fontisto name="bell" size={22} color="#ffffff" />
-              </Pressable>  
-              
-              {/* Profile (Person Icon) */}
-              <Fontisto name="person" size={22} color="#ffffff" />
-              
-            </View>
-          </View>
+            <Header 
+              handleBackAction = 'null'
+              handleTitle = 'My Shopping Lists' 
+              handleIcon1 = 'bell' 
+              handleIconPress1 = {() => {dispatch(setShowNotificationBox(true))}} 
+              handleIcon2='account' 
+              handleIconPress2={() => {dispatch(setShowProfileBox(true))}} 
+            />
 
           {/* List Display */}
           {isLoading ? (
@@ -231,13 +234,30 @@
               handleTextColor={'#ffffff'}
             />
           </View>
-            
+          
+        </SafeAreaView>
+
           {/* notification box controller */}
           {showNotificationBox && ( <NotificationBox/>)}
           
           {/* Invite Friends Box Controller */}
-          {showInviteFriendBox && (<InviteFriendBox/>)}   
-        </SafeAreaView>
+          {showInviteFriendBox && (<InviteFriendBox/>)}  
+
+          {console.log(showProfileBox)}
+          {showProfileBox && 
+          (
+            <Pressable 
+              style={styles.overlay} 
+              onPress={() => dispatch(setShowProfileBox(false))}
+            >
+              <Pressable 
+                style={styles.myBox} 
+                onPress={(e) => {e.stopPropagation()}}
+              >
+                <ProfileBox/>
+              </Pressable>
+            </Pressable>
+          )} 
       </KeyboardAvoidingView>
     );
   };
@@ -248,37 +268,11 @@
     container: {
       flex: 1,
       backgroundColor: '#ecf0f1', // Same light grey background as LogInPage
-      paddingTop: Platform.select({
-        ios: 20,
-        android: 25,
-      })
+      // paddingTop: Platform.select({
+      //   ios: 20,
+      //   android: 25,
+      // })
     },
-    // --- Header Styles ---
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 15,
-      backgroundColor: '#2c3e50', // Main button color from LogInPage
-      borderBottomLeftRadius: 15,
-      borderBottomRightRadius: 15,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.15,
-      shadowRadius: 5,
-      elevation: 6,
-    },
-    headerTitle: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: '#ecf0f1', // Text color matching LogInPage
-    },
-    headerIcons: {
-      flexDirection: 'row',
-      gap: 15, // Space between icons
-    },
-
     // --- List (FlatList) Styles ---
     flatList: {
       flex: 1, // Ensures FlatList takes up available vertical space
@@ -427,4 +421,30 @@
       paddingBottom: Platform.OS === 'ios' ? 20 : 10, // Safe area padding for iOS
       backgroundColor: '#ecf0f1', // Matches background
     },
+    overlay:{
+      position: 'absolute',
+      right:0,
+      left:0,
+      top:0,
+      bottom:0,
+      backgroundColor:('rgba(0,0,0,0.4)'),
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 99
+    },
+    myBox:{
+      position: 'absolute',
+      top: '10%',
+      right:'5%',
+      paddingVertical: 15,
+      paddingHorizontal: 20,
+      backgroundColor: '#fff',
+      borderRadius: 12,
+      shadowColor: '#000',
+      shadowOpacity: 0.08,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 3 },
+      elevation: 4,
+      maxHeight: 300,
+    }
   });
