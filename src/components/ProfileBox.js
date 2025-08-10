@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native'
 import { LogOut } from '../redux/userSlice'
 import { useDispatch, useSelector } from 'react-redux'
 import CustomButton from './CustomButton'
+import { setShowProfileBox } from '../redux/TriggerSlice'
 
 const ProfileBox = () => {
   const dispatch = useDispatch()
@@ -18,6 +19,7 @@ const ProfileBox = () => {
         <CustomButton
           title={'Log Out'}
           HandleonPress={() => {
+            dispatch(setShowProfileBox(true))
             dispatch(LogOut());
           }}
           handleWidth={'80%'}
