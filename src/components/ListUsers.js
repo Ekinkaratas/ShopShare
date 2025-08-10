@@ -41,15 +41,16 @@ const ListUsers = ({ listId }) => {
 
   const sharedWithUsers = currentList?.sharedWithUserData || [];
   const invitePendingUids = currentList?.invitePending || [];
-  const createdByUser = currentList?.createdBy || null;
+  const createdByUser = currentList?.createdByUserData || null;
 
-  const isCreatedByUser = currentUserUid === createdByUser
+  const isCreatedByUser = currentUserUid === createdByUser.userUid
 
   // Prepare users with proper keys
   const invitePendingUsers = invitePendingUids
     .map(uid => allUsersMap[uid])
     .filter(Boolean)
-    .map(user => ({ ...user, key: user.uid || `pending-${Math.random()}` }));
+    .map(user => ({ ...user, key: user.uid || `pending-${Math.random()}` })
+  )
 
   const sharedWithUsersWithKeys = sharedWithUsers.map(user => ({
     ...user,
