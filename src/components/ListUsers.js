@@ -15,6 +15,7 @@ const ListUsers = ({ listId }) => {
     data => data.find(item => item.id === listId)
   );
   const currentList = useSelector(selectCurrentList);
+  const currentUserUid = useSelector(state => state.user.userUid)
 
   // Memoized selector for all users map
   const selectAllUsersMap = createSelector(
@@ -23,13 +24,15 @@ const ListUsers = ({ listId }) => {
       const map = {};
       data.forEach(list => {
         if (list.createdByUserData) {
-          map[list.createdByUserData.uid] = list.createdByUserData;
+          map[list.createdByUserData.userUid] = list.createdByUserData;
         }
         if (list.sharedWithUserData) {
           list.sharedWithUserData.forEach(u => {
-            map[u.uid] = u;
+            map[u.userUid] = u;
           });
         }
+        console.log('createdByUserData', list.createdByUserData)
+        console.log('sharedWithUserData', list.sharedWithUserData)
       });
       return map;
     }
@@ -38,7 +41,9 @@ const ListUsers = ({ listId }) => {
 
   const sharedWithUsers = currentList?.sharedWithUserData || [];
   const invitePendingUids = currentList?.invitePending || [];
-  const createdByUser = currentList?.createdByUserData || null;
+  const createdByUser = currentList?.createdBy || null;
+
+  const isCreatedByUser = currentUserUid === createdByUser
 
   // Prepare users with proper keys
   const invitePendingUsers = invitePendingUids
@@ -48,7 +53,7 @@ const ListUsers = ({ listId }) => {
 
   const sharedWithUsersWithKeys = sharedWithUsers.map(user => ({
     ...user,
-    key: user.uid || `shared-${Math.random()}`
+    key: user.userUid || `shared-${Math.random()}`
   }));
 
   const handleDeleteUser = (userUid) => {
@@ -81,9 +86,9 @@ const ListUsers = ({ listId }) => {
             <View key={user.key} style={styles.userItem}>
               <Ionicons name="person" size={22} color="#34495e" />
               <Text style={styles.userName}>{user.name}</Text>
-              {createdByUser && (
-                <Pressable 
-                  onPress={() => handleDeleteUser(user.uid)}  // Changed from user.data?.uid to user.uid
+              {isCreatedByUser && (
+                <Pressable
+                  onPress={() => handleDeleteUser(user.key)}
                   style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
                 >
                   <AntDesign name="deleteuser" size={24} color="red" />

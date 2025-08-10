@@ -349,7 +349,7 @@ export const listenToFindAllItem = (listId) => async(dispatch) => {
     });
 
     return () => {
-      if (unsubscribe) unsubscribe();
+      unsubscribe();
     };
 
   } catch (error) {
