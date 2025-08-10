@@ -25,11 +25,13 @@ import { BounceIn, } from 'react-native-reanimated';
 import InviteFriendBox from '../components/InviteFriendBox.js';
 import ProfileBox from '../components/ProfileBox.js';
 import Header from '../components/Header.js';
+import useKeyboardHeight from '../components/useKeyboardHeight.js';
 
 const HomePage = ({ navigation }) => {
   const dispatch = useDispatch();
 
   const [listTitle, setListTitle] = useState('');
+  const keyboardHeight = useKeyboardHeight();
 
   const showNotificationBox = useSelector(state => state.trigger.showNotificationBox)
   const showInviteFriendBox = useSelector(state => state.trigger.showInviteFriendBox)
@@ -50,8 +52,8 @@ const HomePage = ({ navigation }) => {
 
     // Initialize listeners
     const setupListeners = async () => {
-      unsubToUserLists = await dispatch(listenToUserLists(currentUserUid));
-      unsubToPendingInvitation = await dispatch(listenToPendingInvitation(currentUserUid));
+      unsubToUserLists = await dispatch(listenToUserLists());
+      unsubToPendingInvitation = await dispatch(listenToPendingInvitation());
     };
 
     setupListeners();
@@ -164,25 +166,29 @@ const HomePage = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.keyboardAvoidingContainer}
-    >
+    <SafeAreaView style={styles.container}>
       <StatusBar
         backgroundColor="#2c3e50" // status bar background color for Android
         barStyle="light-content"  // Set the icon color to light for iOS and Android 
       />
-      <SafeAreaView style={styles.container}>
 
-        {/* Header Section */}
-        <Header
-          handleBackAction='null'
-          handleTitle='My Shopping Lists'
-          handleIcon1={iconBell}
-          handleIconPress1={() => { dispatch(setShowNotificationBox(true)) }}
-          handleIcon2='account'
-          handleIconPress2={() => { dispatch(setShowProfileBox(true)) }}
-        />
+      {/* Header Section */}
+      <Header
+        handleBackAction='null'
+        handleTitle='My Shopping Lists'
+        handleIcon1={iconBell}
+        handleIconPress1={() => { dispatch(setShowNotificationBox(true)) }}
+        handleIcon2='account'
+        handleIconPress2={() => { dispatch(setShowProfileBox(true)) }}
+      />
 
+      <KeyboardAvoidingView
+        style={[
+          styles.keyboardAvoidingContainer,
+          { paddingBottom: Platform.OS === 'android' ? (keyboardHeight+15) : 0 }
+        ]}
+
+      >
         {/* List Display */}
         {isLoading ? (
 
@@ -235,8 +241,8 @@ const HomePage = ({ navigation }) => {
             handleTextColor={'#ffffff'}
           />
         </View>
+      </KeyboardAvoidingView>
 
-      </SafeAreaView>
 
       {/* notification box controller */}
       {showNotificationBox && (<NotificationBox />)}
@@ -245,7 +251,8 @@ const HomePage = ({ navigation }) => {
       {showInviteFriendBox && (<InviteFriendBox />)}
 
       {console.log(showProfileBox)}
-      {showProfileBox &&
+      {
+        showProfileBox &&
         (
           <Pressable
             style={styles.overlay}
@@ -258,8 +265,9 @@ const HomePage = ({ navigation }) => {
               <ProfileBox />
             </Pressable>
           </Pressable>
-        )}
-    </KeyboardAvoidingView>
+        )
+      }
+    </SafeAreaView>
   );
 };
 
@@ -364,8 +372,7 @@ const styles = StyleSheet.create({
 
   // --- Add List Input Area Styles ---
   keyboardAvoidingContainer: {
-    flex: 1, // Occupy full width
-    // flex: 0, // Can be used if there are issues with stretching
+    flex: 1,
   },
   addListInputContainer: {
     flexDirection: 'row',
@@ -374,8 +381,10 @@ const styles = StyleSheet.create({
     width: '90%',
     alignSelf: 'center', // Center horizontally
     paddingVertical: 15,
-    // Adjust marginBottom based on platform to avoid double padding with KeyboardAvoidingView
-    marginBottom: Platform.OS === 'ios' ? 0 : 15,
+    marginBottom: Platform.select({
+      ios: 20,
+      android: 10,
+    }),
     backgroundColor: '#ffffff', // White background for the input card
     borderRadius: 15,
     shadowColor: '#000',
@@ -385,6 +394,7 @@ const styles = StyleSheet.create({
     elevation: 5,
     paddingHorizontal: 15,
   },
+
   textInput: {
     flex: 1,
     height: 50,

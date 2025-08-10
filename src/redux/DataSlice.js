@@ -2,8 +2,9 @@ import { StyleSheet, Text, View, Alert } from 'react-native'
 import React from 'react'
 import { addDoc, collection, getDoc, getDocs, serverTimestamp, updateDoc, doc, deleteDoc, query, where, setDoc, arrayRemove, arrayUnion, onSnapshot } from 'firebase/firestore'
 import { createAsyncThunk, createSlice, } from '@reduxjs/toolkit'
-import { db } from '../../config/firebaseConfig'
+import { auth, db } from '../../config/firebaseConfig'
 import { setIsEffect } from './TriggerSlice'
+import { onAuthStateChanged } from 'firebase/auth'
 
 export const addUsers = createAsyncThunk('/user/addTitle', async (props, { rejectWithValue, }) => {
   try {
@@ -147,9 +148,12 @@ export const addTitle = createAsyncThunk('/user/addTitle', async (props, { getSt
 //   }
 // );
 
-export const listenToPendingInvitation = (userUid) => async (dispatch) => {
+export const listenToPendingInvitation = () => async (dispatch) => {
   try {
-    const invitationQuery = query(
+    const subscriber = onAuthStateChanged(auth, (user) => {
+      const userUid = user.uid
+
+      const invitationQuery = query(
       collection(db, 'lists'),
       where('invitePending', 'array-contains', userUid)
     )
@@ -161,6 +165,7 @@ export const listenToPendingInvitation = (userUid) => async (dispatch) => {
     return () => {
       unsubscribe()
     }
+    })
   } catch (error) {
     console.log('listenToPendingInvitation error: ', error)
   }
@@ -340,11 +345,11 @@ export const addItem = createAsyncThunk('user/listId/addItem', async ({ mission,
 //   }
 // );
 
-export const listenToFindAllItem = (listId) => async(dispatch) => {
+export const listenToFindAllItem = (listId) => async (dispatch) => {
   try {
     const itemsCollectionRef = collection(db, 'lists', listId, 'items');
 
-    const unsubscribe = onSnapshot(itemsCollectionRef, async(querySnapshot) => {
+    const unsubscribe = onSnapshot(itemsCollectionRef, async (querySnapshot) => {
       await processFindAllItemSnapshot(querySnapshot, dispatch, listId);
     });
 
@@ -424,25 +429,31 @@ export const toggleBought = createAsyncThunk('user/listId/toggleBought', async (
   }
 });
 
-export const listenToUserLists = (userUid) => (dispatch) => {
+export const listenToUserLists = () => (dispatch) => {
   try {
+    const subscriber = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userUid = user.uid
 
-    const createdByQuery = query(collection(db, 'lists'), where('createdBy', '==', userUid))
-    const sharedWithQuery = query(collection(db, 'lists'), where('sharedWith', 'array-contains', userUid))
+        const createdByQuery = query(collection(db, 'lists'), where('createdBy', '==', userUid))
+        const sharedWithQuery = query(collection(db, 'lists'), where('sharedWith', 'array-contains', userUid))
 
-    const unsubCreated = onSnapshot(createdByQuery, async (createdSnapshot) => {
-      await processgetAllDataSnapshot(createdSnapshot, dispatch, userUid);
+        const unsubCreated = onSnapshot(createdByQuery, async (createdSnapshot) => {
+          await processgetAllDataSnapshot(createdSnapshot, dispatch, userUid);
+        })
+
+        const unsubShared = onSnapshot(sharedWithQuery, async (sharedWithSnapshot) => {
+          await processgetAllDataSnapshot(sharedWithSnapshot, dispatch, userUid);
+        })
+
+        return () => {
+          unsubCreated()
+          unsubShared()
+        }
+      }else{
+        return;
+      }
     })
-
-    const unsubShared = onSnapshot(sharedWithQuery, async (sharedWithSnapshot) => {
-      await processgetAllDataSnapshot(sharedWithSnapshot, dispatch, userUid);
-    })
-
-    return () => {
-      unsubCreated()
-      unsubShared()
-    }
-
   } catch (error) {
     console.error("listenToUserLists error:", error);
   }
