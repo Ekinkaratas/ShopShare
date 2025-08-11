@@ -52,11 +52,13 @@ const handleMissionChange = (value) => {
 const renderItem = ({ item }) => {
   return (
     <Animated.View style={styles.itemCard}>
+      {/* MissionItem */}
       <View style={{ flex: 1 }}>
         <Text style={[styles.itemName, item.isBought && styles.itemBoughtText]}>{item.mission}</Text>
         <Text style={[styles.itemQuantity, item.isBought && styles.itemBoughtText]}>Quantity: {item.quantity}</Text>
       </View>
 
+      {/*  isBought */}
       <Pressable
         onPress={() => {
           const itemId = item.id;
@@ -71,6 +73,7 @@ const renderItem = ({ item }) => {
         )}
       </Pressable>
 
+      {/* delete item*/}
       <Pressable
         onPress={() => {
           // Alert.alert(title, message, buttonsArray, options);
@@ -101,7 +104,6 @@ const renderItem = ({ item }) => {
 }
 
 const isMissionEmpty = mission.trim() === ''
-// Calculate dynamic styles for picker and itemStyle
 const pickerStyle = [styles.quantityPicker, isMissionEmpty && styles.disabledPicker];
 const pickerItemStyle = Platform.OS === 'ios' && isMissionEmpty ? styles.disabledPickerItem : {};
 
@@ -112,6 +114,7 @@ return (
       backgroundColor="#34495e"
       barStyle="light-content"
     />
+
     {/* Header*/}
     <Header
       handleBackAction={() => { navigation.navigate('Home') }}
@@ -139,6 +142,7 @@ return (
       />
     </View>
 
+    {/* add Items */}
     <View style={styles.addInputSection}>
       {/* Mission Input */}
       <TextInput
@@ -149,6 +153,7 @@ return (
         style={styles.fullWidthTextInput}
       />
 
+      {/* item count determination  */}
       <View style={styles.quantityAndAddContainer}>
         <View style={[styles.quantityPickerWrapper, isMissionEmpty && styles.disabledPickerWrapper]}>
           <Picker
@@ -186,7 +191,6 @@ return (
     {isBoxVisible && (
       <Pressable style={styles.overlay} onPress={() => dispatch(setIsBoxVisible(false))}>
         <Pressable style={styles.myBox} onPress={(e) => {
-          // This stops the touch event from "bubbling" up to the overlay
           e.stopPropagation();
         }}>
           <ListUsers listId={listId} />
@@ -236,7 +240,7 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     marginLeft: 15,
-    backgroundColor: '#e74c3c', // Red delete button
+    backgroundColor: '#e74c3c', 
     width: 30,
     height: 30,
     borderRadius: 15,
@@ -308,7 +312,7 @@ const styles = StyleSheet.create({
   quantityPicker: {
     height: 48,
     width: '100%',
-    color: '#34495e', // Default color for Android
+    color: '#34495e',
   },
   pickerItem: {
     fontSize: 16,
@@ -327,7 +331,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  // Special style for the disabled button
+  
   disabledButton: {
     backgroundColor: '#bdc3c7',
     shadowOpacity: 0,
@@ -338,7 +342,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
   },
-
   itemCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -380,10 +383,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)', // Semi-transparent black overlay
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 99, // Ensure it's on top of everything else
+    zIndex: 99, 
   },
   myBox: {
     position: 'absolute',

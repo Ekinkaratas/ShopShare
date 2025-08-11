@@ -1,9 +1,8 @@
-import { StyleSheet, Text, View } from 'react-native'
-import React from 'react'
+import { View } from 'react-native'
 import { Appbar } from 'react-native-paper'
 
 
-const Header = ({navigation,handleBackAction, handleTitle,handleIcon1,handleIconPress1,handleIcon2, handleIconPress2}) => {
+const Header = ({handleBackAction, handleTitle,handleIcon1,handleIconPress1,handleIcon2, handleIconPress2}) => {
   return (
     <View>
       <Appbar.Header style ={{backgroundColor:'#34495e'}}>

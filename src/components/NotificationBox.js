@@ -1,5 +1,4 @@
   import { StyleSheet, Text, Pressable, FlatList, View } from 'react-native'
-  import React, { useEffect } from 'react'
   import { useDispatch, useSelector } from 'react-redux';
   import { setShowNotificationBox } from '../redux/TriggerSlice.js';
   import Animated, { BounceIn } from 'react-native-reanimated';
@@ -66,9 +65,9 @@
                     <Text style={styles.emptyListText}>You Don't Have Any Notification Yet.</Text>
                   </View>
                 )}
-              showsVerticalScrollIndicator={false}   // estetik görünüm
-              overScrollMode="always"                // Android bounce için
-              bounces={true}                         // iOS bounce
+              showsVerticalScrollIndicator={false}   
+              overScrollMode="always"                
+              bounces={true}                         
               keyboardShouldPersistTaps="handled"
             />
           </Pressable>
@@ -79,7 +78,7 @@
   export default notificationBox
 
   const styles = StyleSheet.create({
-      //--- notification Box Styles ---
+      // notification Box Styles 
       notificationContainer: {
         position: 'absolute',
         top: 0,
@@ -93,7 +92,7 @@
       },
       popupBox: {
         width: 300,
-        height: 320, // Eskiden 150 idi
+        height: 320,
         backgroundColor: 'white',
         padding: 15,
         borderRadius: 15,
@@ -102,16 +101,16 @@
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.3,
         shadowRadius: 3,
-        justifyContent: 'flex-start', // dikkat
+        justifyContent: 'flex-start',
         alignItems: 'center',
       },
-      // --- List (FlatList) Styles ---
+      //  List (FlatList) Styles 
       flatList: {
         maxHeight: 250,
         width: '100%',
       },
       flatListContent: {
-        paddingBottom: 20, // Padding at the bottom of the list content
+        paddingBottom: 20,
       },
       loadingContainer: {
         flex: 1,
@@ -135,7 +134,6 @@
         marginTop: 5,
       },
       // render styles
-
       notificationCard: {
         backgroundColor: '#ffffff',
         borderRadius: 15,
@@ -149,7 +147,7 @@
         shadowOpacity: 0.1,
         shadowRadius: 3,
         elevation: 3,
-        width: 260, // popup içi düzgün yerleşmesi için sabitlik
+        width: 260,
       },
       notificationTextBlock: {
         flex: 1,
@@ -183,7 +181,6 @@
         marginTop: 4,
         fontStyle: 'italic',
       },
-      // Make sender info more prominent
       senderName: {
         fontSize: 14,
         color: '#3498db',

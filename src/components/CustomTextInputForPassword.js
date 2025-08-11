@@ -63,11 +63,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 15,
-    paddingHorizontal: 10, // Burası 15'ten 10'a değiştirildi
-    paddingRight: 45,      // Bu, göz simgesi için korundu
+    paddingHorizontal: 10, 
+    paddingRight: 45,      
     height: 45,
-    // fontWeight: 'bold',
-    // textAlign: 'center', // Burası kaldırıldı veya yorum satırı yapıldı
   },
   iconContainer: {
     position: 'absolute',

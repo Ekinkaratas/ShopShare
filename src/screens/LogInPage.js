@@ -29,7 +29,7 @@ const LogInPage = ({ navigation }) => {
 
     const handleLogin = () => {
         if (email.trim() === '' || password.trim() === '') {
-            alert('Lütfen e-posta ve şifrenizi girin.');
+            alert('Please enter your email address and password.');
             return;
         }
         dispatch(LogIn({ email, password }));
@@ -64,7 +64,7 @@ const LogInPage = ({ navigation }) => {
                             handleSecurityText={true}
                             handleValue={password}
                             HandleOnChange={(value) => setPassword(value)}
-                            handleTitleColor={'#34495e'} 
+                            handleTitleColor={'#34495e'}
                         />
 
                         <CustomButton
@@ -99,7 +99,7 @@ export default LogInPage;
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#ecf0f1", // Eski versiyondaki açik gri arka plan
+        backgroundColor: "#ecf0f1",
         paddingTop: Platform.OS === 'android' ? 30 : 0,
     },
     keyboardAvoidingView: {
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     contentWrapper: {
         width: '90%',
         maxWidth: 400,
-        backgroundColor: '#ffffff', // Beyaz kart arka planı
+        backgroundColor: '#ffffff',
         borderRadius: 15,
         paddingVertical: 30,
         paddingHorizontal: 25,
@@ -124,12 +124,12 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 32,
         fontWeight: '700',
-        color: '#2c3e50', // Eski koyu gri/lacivert ana renk
+        color: '#2c3e50',
         marginBottom: 10,
     },
     subtitle: {
         fontSize: 16,
-        color: '#7f8c8d', // Daha nötr bir gri tonu
+        color: '#7f8c8d',
         marginBottom: 30,
         textAlign: 'center',
     },
@@ -142,17 +142,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingTop: 20,
         borderTopWidth: 1,
-        borderColor: '#ecf0f1', // Çok açık gri çizgi
+        borderColor: '#ecf0f1',
         width: '100%',
     },
     registerPromptText: {
         fontSize: 14,
-        color: '#34495e', // Koyu gri metin
+        color: '#34495e',
         marginBottom: 8,
     },
     registerLinkText: {
         fontSize: 15,
-        color: '#2980b9', // Eski versiyondaki mavi link rengi
+        color: '#2980b9',
         fontWeight: '600',
         textDecorationLine: 'underline',
     },

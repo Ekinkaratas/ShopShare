@@ -18,7 +18,7 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import NotificationBox from '../components/NotificationBox.js';
 import CustomButton from '../components/CustomButton.js';
 import { LogOut } from '../redux/userSlice.js';
-import { addTitle, deleteData, getAllData, toggleListTic, getPendingEmail, listCreatedBy, setData, listenToUserLists, listenToPendingInvitation } from '../redux/DataSlice.js';
+import { addTitle, deleteData, listenToUserLists, listenToPendingInvitation } from '../redux/DataSlice.js';
 import { setShowNotificationBox, setInviteFriendBox, setIsEffect, setCurrentListId, setShowProfileBox } from '../redux/TriggerSlice.js';
 import Animated from 'react-native-reanimated';
 import { BounceIn, } from 'react-native-reanimated';
@@ -42,7 +42,7 @@ const HomePage = ({ navigation }) => {
   const iconBell = pendingData.length > 0 ? 'bell-badge' : 'bell'
 
 
-  const { data, isLoading, listBuyStatus, } = useSelector(state => state.userData); // Also get the error state
+  const { data, isLoading, listBuyStatus, } = useSelector(state => state.userData);
   const currentUserUid = useSelector(state => state.user.userUid);
 
   useEffect(() => {
@@ -76,12 +76,11 @@ const HomePage = ({ navigation }) => {
       return;
     }
 
-    // Assuming addTitle's payload returns listId and title
     const resultAction = await dispatch(addTitle({ title: listTitle }));
 
     if (addTitle.fulfilled.match(resultAction)) {
-      setListTitle(''); // Clear the input
-      dispatch(setIsEffect()); //) Trigger to refresh the list
+      setListTitle('');
+      dispatch(setIsEffect());
     } else {
       Alert.alert("Error", resultAction.payload || "An error occurred while adding the list.");
     }
@@ -96,9 +95,9 @@ const HomePage = ({ navigation }) => {
         {/* isAllBought Control Part */}
         <View style={styles.checkboxContainer}>
           {isAllBought ? (
-            <Fontisto name="checkbox-active" size={22} color="#2ecc71" /> // Green check
+            <Fontisto name="checkbox-active" size={22} color="#2ecc71" />
           ) : (
-            <Fontisto name="checkbox-passive" size={22} color="#7f8c8d" /> // Gray box
+            <Fontisto name="checkbox-passive" size={22} color="#7f8c8d" />
           )}
         </View>
 
@@ -132,33 +131,31 @@ const HomePage = ({ navigation }) => {
 
         {/* Delete button */}
         {item.createdBy === currentUserUid &&
-          (
-            <Pressable
-              onPress={() => {
-                // Alert.alert(title, message, buttonsArray, options);
-                Alert.alert(
-                  "Delete",
-                  `Do you want to delete the list "${item.title}"?`,
-                  [
-                    {
-                      text: "Cancel",
-                      style: "cancel"
-                    },
-                    {
-                      text: "OK",
-                      onPress: () => {
-                        dispatch(deleteData(item.id));
-                      }
+          (<Pressable
+            onPress={() => {
+              // Alert.alert(title, message, buttonsArray, options);
+              Alert.alert(
+                "Delete",
+                `Do you want to delete the list "${item.title}"?`,
+                [
+                  {
+                    text: "Cancel",
+                    style: "cancel"
+                  },
+                  {
+                    text: "OK",
+                    onPress: () => {
+                      dispatch(deleteData(item.id));
                     }
-                  ]
-                );
+                  }
+                ]
+              );
 
-              }}
-              style={styles.deleteButton}
-            >
-              <Text style={styles.deleteButtonText}>X</Text>
-            </Pressable>
-          )
+            }}
+            style={styles.deleteButton}
+          >
+            <Text style={styles.deleteButtonText}>X</Text>
+          </Pressable>)
         }
 
       </Animated.View>
@@ -183,11 +180,9 @@ const HomePage = ({ navigation }) => {
       />
 
       <KeyboardAvoidingView
-        style={[
-          styles.keyboardAvoidingContainer,
-          { paddingBottom: Platform.OS === 'android' ? (keyboardHeight+15) : 0 }
-        ]}
-
+        style={styles.keyboardAvoidingContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
       >
         {/* List Display */}
         {isLoading ? (
@@ -228,19 +223,6 @@ const HomePage = ({ navigation }) => {
           </Pressable>
         </View>
 
-
-        {/* Logout Button (outside of KeyboardAvoidingView) */}
-        <View style={styles.logoutButtonContainer}>
-          <CustomButton
-            title={'Log Out'}
-            HandleonPress={() => {
-              dispatch(LogOut());
-            }}
-            handleWidth={'80%'}
-            handleBackground={'#e74c3c'}
-            handleTextColor={'#ffffff'}
-          />
-        </View>
       </KeyboardAvoidingView>
 
 
@@ -250,22 +232,19 @@ const HomePage = ({ navigation }) => {
       {/* Invite Friends Box Controller */}
       {showInviteFriendBox && (<InviteFriendBox />)}
 
-      {console.log(showProfileBox)}
-      {
-        showProfileBox &&
-        (
+      {/* Profile Box Controller */}
+      {showProfileBox &&
+        (<Pressable
+          style={styles.overlay}
+          onPress={() => dispatch(setShowProfileBox(false))}
+        >
           <Pressable
-            style={styles.overlay}
-            onPress={() => dispatch(setShowProfileBox(false))}
+            style={styles.myBox}
+            onPress={(e) => { e.stopPropagation() }}
           >
-            <Pressable
-              style={styles.myBox}
-              onPress={(e) => { e.stopPropagation() }}
-            >
-              <ProfileBox />
-            </Pressable>
+            <ProfileBox />
           </Pressable>
-        )
+        </Pressable>)
       }
     </SafeAreaView>
   );
@@ -276,20 +255,16 @@ export default HomePage;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ecf0f1', // Same light grey background as LogInPage
-    // paddingTop: Platform.select({
-    //   ios: 20,
-    //   android: 25,
-    // })
+    backgroundColor: '#ecf0f1',
   },
-  // --- List (FlatList) Styles ---
+  //  List (FlatList) Styles 
   flatList: {
-    flex: 1, // Ensures FlatList takes up available vertical space
+    flex: 1,
     paddingHorizontal: 15,
-    marginTop: 20, // Space below the header
+    marginTop: 20,
   },
   flatListContent: {
-    paddingBottom: 20, // Padding at the bottom of the list content
+    paddingBottom: 20,
   },
   loadingContainer: {
     flex: 1,
@@ -312,16 +287,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 5,
   },
-
-  // --- List Item Styles ---
-  listItem: { // Card style for each list item
+  //  List Item Styles 
+  listItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff', // White card background
+    backgroundColor: '#ffffff',
     borderRadius: 10,
     paddingVertical: 15,
-    paddingHorizontal: 20, // More horizontal padding
-    marginVertical: 8, // Space between list items
+    paddingHorizontal: 20,
+    marginVertical: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -329,21 +303,21 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   checkboxContainer: {
-    paddingRight: 15, // Space between checkbox and text
-    paddingVertical: 5, // Increase clickable area
+    paddingRight: 15,
+    paddingVertical: 5,
   },
   listItemTextContainer: {
-    flex: 1, // Takes up remaining space
+    flex: 1,
     justifyContent: 'center',
   },
   listItemText: {
     fontSize: 17,
-    color: '#2c3e50', // Dark text color
+    color: '#2c3e50',
     fontWeight: '500',
   },
   listItemTextStrikethrough: {
     fontSize: 17,
-    color: '#95a5a6', // Grey for completed items
+    color: '#95a5a6',
     textDecorationLine: 'line-through',
     fontStyle: 'italic',
   },
@@ -353,11 +327,10 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     alignItems: 'center',
     justifyContent: 'center',
-
   },
   deleteButton: {
     marginLeft: 15,
-    backgroundColor: '#e74c3c', // Red delete button
+    backgroundColor: '#e74c3c',
     width: 30,
     height: 30,
     borderRadius: 15,
@@ -369,8 +342,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-
-  // --- Add List Input Area Styles ---
+  //  Add List Input Area Styles 
   keyboardAvoidingContainer: {
     flex: 1,
   },
@@ -379,13 +351,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '90%',
-    alignSelf: 'center', // Center horizontally
+    alignSelf: 'center',
     paddingVertical: 15,
     marginBottom: Platform.select({
       ios: 20,
       android: 10,
     }),
-    backgroundColor: '#ffffff', // White background for the input card
+    backgroundColor: '#ffffff',
     borderRadius: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -394,23 +366,22 @@ const styles = StyleSheet.create({
     elevation: 5,
     paddingHorizontal: 15,
   },
-
   textInput: {
     flex: 1,
     height: 50,
     marginRight: 10,
     borderWidth: 1,
-    borderColor: '#bdc3c7', // Light grey border
+    borderColor: '#bdc3c7',
     borderRadius: 25,
     paddingHorizontal: 20,
-    backgroundColor: '#ecf0f1', // Light grey input background
+    backgroundColor: '#ecf0f1',
     fontSize: 16,
     color: '#2c3e50',
   },
   addButton: {
     width: 80,
     height: 50,
-    backgroundColor: '#2ecc71', // Vibrant green, similar to LogInPage accent
+    backgroundColor: '#2ecc71',
     borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
@@ -425,12 +396,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  // --- Logout Button Style ---
+  //  Logout Button Style 
   logoutButtonContainer: {
     width: '100%',
     alignItems: 'center',
     paddingBottom: Platform.OS === 'ios' ? 20 : 10, // Safe area padding for iOS
-    backgroundColor: '#ecf0f1', // Matches background
+    backgroundColor: '#ecf0f1',
   },
   overlay: {
     position: 'absolute',

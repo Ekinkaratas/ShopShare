@@ -1,7 +1,7 @@
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { Pressable, StyleSheet, } from 'react-native'
 import React, {useState} from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { setInviteFriendBox, setCurrentListId } from '../redux/TriggerSlice'
+import { useDispatch, } from 'react-redux'
+import { setInviteFriendBox, } from '../redux/TriggerSlice'
 import CustomTextInput from './CustomTextInput'
 import CustomButton from './CustomButton'
 import { handleInvite } from '../redux/DataSlice'
@@ -10,8 +10,6 @@ const InviteFriendBox = () => {
     const dispatch = useDispatch();
     const [email, setEmail] = useState('');
 
-
-    
   return (
     <Pressable
     style={styles.InviteContainer}

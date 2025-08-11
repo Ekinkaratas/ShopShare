@@ -1,5 +1,4 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { deleteUser } from '../redux/DataSlice';
@@ -117,7 +116,6 @@ const ListUsers = ({ listId }) => {
 
 export default ListUsers;
 
-// Stylesheet
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 15,

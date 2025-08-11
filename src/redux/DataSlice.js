@@ -1,5 +1,4 @@
-import { StyleSheet, Text, View, Alert } from 'react-native'
-import React from 'react'
+import { Alert } from 'react-native'
 import { addDoc, collection, getDoc, getDocs, serverTimestamp, updateDoc, doc, deleteDoc, query, where, setDoc, arrayRemove, arrayUnion, onSnapshot } from 'firebase/firestore'
 import { createAsyncThunk, createSlice, } from '@reduxjs/toolkit'
 import { auth, db } from '../../config/firebaseConfig'
@@ -28,12 +27,9 @@ export const addTitle = createAsyncThunk('/user/addTitle', async (props, { getSt
   try {
     const state = getState()
 
-    // console.log("Kullanici props:", props);
     if (!props.title || props.title.trim() === '') {
       return rejectWithValue("Boş başlik gönderilemez.");
     }
-
-    // console.log('userUidL: ', state.user.userUid )
 
     await addDoc(collection(db, 'lists'), {
       title: props.title,
@@ -49,129 +45,7 @@ export const addTitle = createAsyncThunk('/user/addTitle', async (props, { getSt
   }
 });
 
-// export const getAllData = createAsyncThunk('/user/getAllData',async (_, { getState, rejectWithValue }) => {
-//     try {
-//       const state = getState();
-//       const userUid = state.user.userUid;
-
-//       const createdByQuery = query(collection(db, 'lists'), where('createdBy', '==', userUid));
-//       const sharedWithQuery = query(collection(db, 'lists'), where('sharedWith', 'array-contains', userUid));
-
-//       const createdSnapshot = await getDocs(createdByQuery);
-//       const sharedSnapshot = await getDocs(sharedWithQuery);
-
-//       const combinedDocs = createdSnapshot.docs.concat(
-//         sharedSnapshot.docs.filter((doc) => !createdSnapshot.docs.some((createdDoc) => createdDoc.id === doc.id))
-//       );
-
-//       const userUids = new Set();
-//       combinedDocs.forEach(doc => {
-//         const data = doc.data();
-//         if (data.createdBy) userUids.add(data.createdBy);
-//         if (data.sharedWith && Array.isArray(data.sharedWith)) {
-//           data.sharedWith.forEach(uid => userUids.add(uid));
-//         }
-//       });
-
-//       const userQueries = [...userUids].map(uid => getDoc(doc(db, 'users', uid)));
-//       const userSnapshots = await Promise.all(userQueries);
-
-//       const usersMap = {};
-//       userSnapshots.forEach(snap => {
-//         if (snap.exists()) {
-//           usersMap[snap.id] = { uid: snap.id, ...snap.data() };
-//         }
-//       });
-
-//       // Doğrudan `map` işleminin sonucunu döndürüyoruz
-//       return combinedDocs.map(doc => {
-//         const data = doc.data();
-//         const createdByUser = usersMap[data.createdBy] || {};
-//         const sharedUsersData = (data.sharedWith || []).map(uid => usersMap[uid]).filter(Boolean);
-
-//         return {
-//           id: doc.id,
-//           ...data,
-//           createdByUserData: createdByUser,
-//           sharedWithUserData: sharedUsersData,
-//         };
-//       });
-//     } catch (error) {
-//       console.error("getAllData Thunk Error: ", error);
-//       return rejectWithValue(error.message);
-//     }
-//   }
-// );
-
-// export const getPendingEmail = createAsyncThunk('user/getPendingEmail',async (_, { getState, rejectWithValue, dispatch }) => {
-//     try {
-//       const state = getState();
-//       const userUid = state.user.userUid; // Redux store'daki user slice'ından e-postayı alıyoruz
-
-//       const inviteQuery = query(
-//         collection(db, 'lists'),
-//         where('invitePending', 'array-contains', userUid)
-//       );
-
-//       const allItems = [];
-
-//       const inviteSnapshot = await getDocs(inviteQuery);
-
-//       for (const docSnap of inviteSnapshot.docs) {
-//         const data = docSnap.data();
-//         const createdByUid = data.createdBy;
-
-//         let senderName = 'Unknown';
-
-//         if (createdByUid) {
-//           const senderDocRef = doc(db, 'users', createdByUid);
-//           const senderSnap = await getDoc(senderDocRef);
-//           if (senderSnap.exists()) {
-//             const userData = senderSnap.data();
-//             senderName = userData.name + ' ' + (userData.surname || '');
-//           }
-//         }
-
-//         allItems.push({
-//           id: docSnap.id,
-//           ...data,
-//           senderName: senderName.trim(),
-//         });
-//       }
-//       console.log('Returned pending items:', allItems);
-
-//       return allItems;
-//     } catch (error) {
-//       console.log("getPendingEmail Thunk Error: ", error);
-//       return rejectWithValue(error.message);
-//     }
-//   }
-// );
-
-export const listenToPendingInvitation = () => async (dispatch) => {
-  try {
-    const subscriber = onAuthStateChanged(auth, (user) => {
-      const userUid = user.uid
-
-      const invitationQuery = query(
-      collection(db, 'lists'),
-      where('invitePending', 'array-contains', userUid)
-    )
-
-    const unsubscribe = onSnapshot(invitationQuery, async (InvitationSnap) => {
-      await processPendingInvitationSnapshot(InvitationSnap, dispatch, userUid);
-    })
-
-    return () => {
-      unsubscribe()
-    }
-    })
-  } catch (error) {
-    console.log('listenToPendingInvitation error: ', error)
-  }
-}
-
-export const deleteData = createAsyncThunk('/user/deleteData', async (listId, { getState, rejectWithValue, dispatch }) => {
+export const deleteData = createAsyncThunk('/user/deleteData', async (listId, { rejectWithValue, dispatch }) => {
   try {
 
     if (!listId) {
@@ -306,62 +180,6 @@ export const addItem = createAsyncThunk('user/listId/addItem', async ({ mission,
 }
 );
 
-// export const findAllItem = createAsyncThunk('user/listId/findAllItem',async (listId, { rejectWithValue, dispatch }) => {
-//     try {
-//       const docsSnapshot = await getDocs(collection(db, 'lists', listId, 'items'));
-
-//       const items = [];
-
-//       docsSnapshot.forEach((doc) => {
-//         const data = doc.data();
-//         items.push({
-//           id: doc.id,
-//           mission: data.mission,
-//           quantity: data.quantity,
-//           isBought: data.isBought || false,
-//         });
-//       });
-
-//       let allItemIsBought = true;
-//       if(items.length === 0){
-//         allItemIsBought = false 
-//       }else{
-//         for(const item of items){
-//           if(!item.isBought){
-//             allItemIsBought = false;
-//             break;
-//           }
-//         }
-//       }
-
-//       dispatch(setListBuyStatus({ listId, status: allItemIsBought}))
-
-//       return items;
-
-//     } catch (error) {
-//       console.log("findAllItem error: ", error);
-//       return rejectWithValue(error.message);
-//     }
-//   }
-// );
-
-export const listenToFindAllItem = (listId) => async (dispatch) => {
-  try {
-    const itemsCollectionRef = collection(db, 'lists', listId, 'items');
-
-    const unsubscribe = onSnapshot(itemsCollectionRef, async (querySnapshot) => {
-      await processFindAllItemSnapshot(querySnapshot, dispatch, listId);
-    });
-
-    return () => {
-      unsubscribe();
-    };
-
-  } catch (error) {
-    console.log("listenToFindAllItem error: ", error);
-  }
-}
-
 export const deleteUser = createAsyncThunk('user/listId/deleteUser', async ({ listId, userUid }, { rejectWithValue, dispatch }) => {
   try {
     const docRef = doc(db, 'lists', listId)
@@ -411,8 +229,6 @@ export const toggleBought = createAsyncThunk('user/listId/toggleBought', async (
       return rejectWithValue('Item not found');
     }
 
-
-
     const currentStatus = itemSnap.data().isBought || false;
 
     await updateDoc(itemRef, {
@@ -428,6 +244,46 @@ export const toggleBought = createAsyncThunk('user/listId/toggleBought', async (
     return rejectWithValue(error.message);
   }
 });
+
+export const listenToPendingInvitation = () => async (dispatch) => {
+  try {
+    const subscriber = onAuthStateChanged(auth, (user) => {
+      const userUid = user.uid
+
+      const invitationQuery = query(
+      collection(db, 'lists'),
+      where('invitePending', 'array-contains', userUid)
+    )
+
+    const unsubscribe = onSnapshot(invitationQuery, async (InvitationSnap) => {
+      await processPendingInvitationSnapshot(InvitationSnap, dispatch, userUid);
+    })
+
+    return () => {
+      unsubscribe()
+    }
+    })
+  } catch (error) {
+    console.log('listenToPendingInvitation error: ', error)
+  }
+}
+
+export const listenToFindAllItem = (listId) => async (dispatch) => {
+  try {
+    const itemsCollectionRef = collection(db, 'lists', listId, 'items');
+
+    const unsubscribe = onSnapshot(itemsCollectionRef, async (querySnapshot) => {
+      await processFindAllItemSnapshot(querySnapshot, dispatch, listId);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+
+  } catch (error) {
+    console.log("listenToFindAllItem error: ", error);
+  }
+}
 
 export const listenToUserLists = () => (dispatch) => {
   try {
@@ -510,7 +366,6 @@ const processPendingInvitationSnapshot = async (snapshot, dispatch, currentUserU
       const listData = docSnap.data();
       const createdByUid = listData.createdBy;
 
-      // Fetch sender info
       let senderName = 'Unknown';
       let senderEmail = '';
 
@@ -603,31 +458,9 @@ const DataSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // .addCase(getAllData.pending, (state) => {
-      //   state.isLoading = true;
-      // })
-      // .addCase(getAllData.fulfilled, (state, action) => {
-      //   state.isLoading = false;
-      //   state.data = action.payload;
-      // })
-      // .addCase(getAllData.rejected, (state, action) => {
-      //   state.isLoading = false;
-      //   state.error = action.payload;
-      // })
-      // .addCase(getPendingEmail.pending, (state) => {
-      //   state.isLoading = true
-      // })
-      // .addCase(getPendingEmail.fulfilled, (state,action) => {
-      //   state.isLoading = false
-      //   state.pendingData = action.payload
-      // })
-      // .addCase(getPendingEmail.rejected, (state,action) => {
-      //   state.isLoading = false
-      //   state.error = action.payload
-      // })
       .addCase(addUsers.rejected, (state, action) => {
-        console.log("User ekleme hatası:", action.payload);
-        state.error = action.payload; // istersen store’da hata gösterimi için
+        console.log("User addition error:", action.payload);
+        state.error = action.payload;
       })
       .addCase(handleInvite.rejected, (state, action) => {
         state.error = action.payload
@@ -646,17 +479,6 @@ const DataSlice = createSlice({
         state.isLoading = false
         state.error = action.payload
       })
-      // .addCase(findAllItem.pending, (state) =>{
-      //     state.isLoading = true
-      // })
-      // .addCase(findAllItem.fulfilled, (state, action) => {
-      //     state.isLoading = false;
-      //     state.items = action.payload;
-      // })
-      // .addCase(findAllItem.rejected, (state,action) =>{
-      //     state.isLoading = false
-      //     state.error = action.payload
-      // })
       .addCase(deleteUser.rejected, (state, action) => {
         state.error = action.payload
       })

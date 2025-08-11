@@ -19,7 +19,7 @@ const ProfileBox = () => {
         <CustomButton
           title={'Log Out'}
           HandleonPress={() => {
-            dispatch(setShowProfileBox(true))
+            dispatch(setShowProfileBox(false))
             dispatch(LogOut());
           }}
           handleWidth={'80%'}
@@ -35,7 +35,7 @@ export default ProfileBox
 
 const styles = StyleSheet.create({
   profileInfoContainer: {
-    borderBottomWidth: StyleSheet.hairlineWidth, // Use a thin, crisp line for a separator
+    borderBottomWidth: StyleSheet.hairlineWidth, // a thin, crisp line for a separator
     borderBottomColor: '#e0e0e0',
     paddingBottom: 15,
     marginBottom: 15,
@@ -43,6 +43,6 @@ const styles = StyleSheet.create({
   emailText: {
     fontSize: 16,
     color: '#333',
-    fontWeight: '500', // Use a slightly bolder font weight
+    fontWeight: '500', 
   },
 })

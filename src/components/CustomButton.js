@@ -1,8 +1,6 @@
-import React from 'react';
 import { Pressable, 
     StyleSheet,
     View,
-    Image,
     Text,
 } from "react-native"
 

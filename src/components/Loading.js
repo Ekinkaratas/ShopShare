@@ -1,4 +1,3 @@
-import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
 const Loading = () => {
@@ -13,10 +12,10 @@ export default Loading;
 
 const styles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,  // tüm ekranı kaplar
-    backgroundColor: 'rgba(0, 0, 0, 0.4)', // yarı saydam siyah, arka planı kısar
+    ...StyleSheet.absoluteFillObject, // Used to cover the background, create an overlay, or position a component so that it covers its parent entirely.
+    backgroundColor: 'rgba(0, 0, 0, 0.4)', 
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 9999,  // üstte görünmesini sağlar
+    zIndex: 9999,  
   },
 });

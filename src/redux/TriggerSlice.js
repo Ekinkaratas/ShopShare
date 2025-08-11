@@ -1,10 +1,8 @@
-import { Text, View } from 'react-native'
-import React from 'react'
 import { createSlice } from '@reduxjs/toolkit'
 
 const initialState = {
-    showNotificationBox : false,
-    showInviteFriendBox : false,
+    showNotificationBox: false,
+    showInviteFriendBox: false,
     showProfileBox: false,
     isEffect: false,
     isBoxVisible: false,
@@ -14,8 +12,8 @@ const initialState = {
 export const TriggerSlice = createSlice({
     name: 'trigger',
     initialState,
-    reducers:{
-        setShowNotificationBox:(state,action) => {
+    reducers: {
+        setShowNotificationBox: (state, action) => {
             state.showNotificationBox = action.payload
         },
         setInviteFriendBox: (state, action) => {
